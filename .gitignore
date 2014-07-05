@@ -1,0 +1,7 @@
+.settings
+.gradle
+.classpath
+.project
+bin
+bin/tips
+bin/tips/Main.class
