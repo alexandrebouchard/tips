@@ -1,4 +1,4 @@
-package tips;
+package tips.pip;
 
 
 
@@ -28,17 +28,17 @@ import briefj.Indexer;
 import briefj.collections.Counter;
 import briefj.collections.UnorderedPair;
 
+import tips.ImportanceSampler;
+import tips.PotPropOptions;
+import tips.PotProposal;
 import tips.pip.PIPPotential;
 import tips.pip.PIPProcess;
 import tips.pip.PIPString;
-import tips.pip.ref.PIPLikelihoodCalculator;
-import tips.pip.ref.PIPTreeNode;
-import tips.pip.ref.PoissonParameters;
 
 
 
 
-public class Main
+public class TestPIP
 {
   private static SequenceId ta = new SequenceId("A"), tb = new SequenceId("B");
   
@@ -48,9 +48,6 @@ public class Main
     double mu = 0.5;
     double bl =  0.3;
     Random genRand = new Random(1);
-    
-    
-
     
     PIPProcess process = new PIPProcess(lambda, mu);
     

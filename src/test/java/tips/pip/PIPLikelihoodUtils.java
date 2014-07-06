@@ -1,4 +1,4 @@
-package tips.pip.ref;
+package tips.pip;
 
 import java.util.Map;
 
