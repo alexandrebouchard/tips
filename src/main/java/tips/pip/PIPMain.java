@@ -22,7 +22,7 @@ import muset.SequenceId;
 
 
 
-public class Main implements Runnable
+public class PIPMain implements Runnable
 {
   @Option public double lambda =  2.0;
   @Option public double mu = 0.5;
@@ -40,7 +40,7 @@ public class Main implements Runnable
   @Override
   public void run()
   {
-    generateData();
+    generateNextData();
     ImportanceSampler<PIPString> sampler = buildImportanceSampler();
     sampler.nParticles = nParticles;
     Counter<List<PIPString>> sample = sampler.sample(getStart(), getEnd(), bl);
@@ -55,12 +55,12 @@ public class Main implements Runnable
     return new ImportanceSampler<PIPString>(prop, process);
   }
 
-  public void generateData()
+  public void generateNextData()
   {
     PIPProcess process = getProcess();
     fullGeneratedPath = process.sample(genRand, bl);
-    generatedEndPoints = PIPProcess.keepOnlyEndPts(fullGeneratedPath, Main.ta, Main.tb);
-    endPoints = getEndPoints(generatedEndPoints, Main.ta, Main.tb);
+    generatedEndPoints = PIPProcess.keepOnlyEndPts(fullGeneratedPath, PIPMain.ta, PIPMain.tb);
+    endPoints = getEndPoints(generatedEndPoints, PIPMain.ta, PIPMain.tb);
   }
 
   private PIPProcess getProcess()
@@ -91,7 +91,7 @@ public class Main implements Runnable
 
   public static void main(String [] args)
   {
-    Mains.instrumentedRun(args, new Main());
+    Mains.instrumentedRun(args, new PIPMain());
   }
 
   public MSAPoset getGeneratedEndPoints()
@@ -115,7 +115,7 @@ public class Main implements Runnable
   private void ensureGenerated()
   {
     if (generatedEndPoints == null)
-      generateData();
+      generateNextData();
   }
   
   public static SequenceId ta = new SequenceId("A"), tb = new SequenceId("B");

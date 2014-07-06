@@ -87,4 +87,4 @@ buildscript {
 // use 'gradle distZip' to create deployable zip
 // use 'gradle installApp' to copy it somewhere
 apply plugin:'application'  
-mainClassName = "tips.pip.Main"
+mainClassName = "tips.pip.PIPMain"
