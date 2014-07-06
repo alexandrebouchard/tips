@@ -5,56 +5,121 @@ package tips;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import muset.LinearizedAlignment;
 import muset.MSAPoset;
 import muset.SequenceId;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.jgrapht.UndirectedGraph;
+
+import com.google.common.collect.Maps;
 
 
 
 
+import bayonet.graphs.GraphUtils;
+import briefj.Indexer;
 import briefj.collections.Counter;
+import briefj.collections.UnorderedPair;
 
 import tips.pip.PIPPotential;
 import tips.pip.PIPProcess;
 import tips.pip.PIPString;
+import tips.pip.ref.PIPLikelihoodCalculator;
+import tips.pip.ref.PIPTreeNode;
+import tips.pip.ref.PoissonParameters;
 
 
 
 
 public class Main
 {
-
+  private static SequenceId ta = new SequenceId("A"), tb = new SequenceId("B");
   
   public static void main(String [] args)
   {
     double lambda =  2.0;
     double mu = 0.5;
     double bl =  0.3;
-    Random genRand = new Random(10);
-    SequenceId ta = new SequenceId("A"), tb = new SequenceId("B");
+    Random genRand = new Random(1);
+    
+    
+
     
     PIPProcess process = new PIPProcess(lambda, mu);
-    MSAPoset msa = PIPProcess.keepOnlyEndPts(process.sample(genRand, bl), ta, tb);
-    System.out.println(msa);
-    Pair<PIPString,PIPString> endPoints = getEndPoints(msa, ta, tb);
-    PIPPotential pot = new PIPPotential();
-    PotProposal<PIPString> prop = new PotProposal<PIPString>(process, pot, new PotPropOptions());
-    ImportanceSampler<PIPString> is = new ImportanceSampler<PIPString>(prop, process);
-    is.nParticles = 100;
-    SummaryStatistics weightVariance = new SummaryStatistics();
-    for (int i = 0; i < 10; i++)
+    
+    for (int repeat = 0; repeat < 10; repeat++)
     {
-      Counter<List<PIPString>> samples = is.sample(endPoints.getLeft(), endPoints.getRight(), bl, weightVariance);
-      double estimate = is.estimateZ(samples);
-      System.out.println(estimate);
+    
+      MSAPoset msa = PIPProcess.keepOnlyEndPts(process.sample(genRand, bl), ta, tb);
+      
+      double exact = Math.exp(exact(mu, lambda, bl, msa));
+      
+      System.out.println("exact = " + exact);
+      
+      System.out.println(msa);
+      Pair<PIPString,PIPString> endPoints = getEndPoints(msa, ta, tb);
+      PIPPotential pot = new PIPPotential();
+      PotProposal<PIPString> prop = new PotProposal<PIPString>(process, pot, new PotPropOptions());
+      ImportanceSampler<PIPString> is = new ImportanceSampler<PIPString>(prop, process);
+      is.nParticles = 1;
+      SummaryStatistics weightVariance = new SummaryStatistics();
+      for (int i = 0; i < 10; i++)
+      {
+        SummaryStatistics stat = new SummaryStatistics();
+        for (int j = 0; j < 100; j++)
+        {
+          Counter<List<PIPString>> samples = is.sample(endPoints.getLeft(), endPoints.getRight(), bl, weightVariance);
+          double estimate = is.estimateZ(samples);
+          stat.addValue(Math.pow((estimate - exact), 2));
+//          System.out.println("approx(" + is.nParticles + ") = " + (estimate));
+        }
+        System.out.println("mse " + stat.getMean());
+        is.nParticles *= 2;
+      }
+      
+      System.out.println();
     }
   }
   
+  private static double exact(double mu, double lambda, double bl, MSAPoset msa)
+  { 
+    LinearizedAlignment linearizedMSA = new LinearizedAlignment(msa);
+    PIPTreeNode root = PIPTreeNode.nextUnlabelled();
+    PIPTreeNode 
+      n1 = PIPTreeNode.withLabel(ta.toString()),
+      n2 = PIPTreeNode.withLabel(tb.toString());
+    UndirectedGraph<PIPTreeNode, UnorderedPair<PIPTreeNode,PIPTreeNode>> topo = GraphUtils.newUndirectedGraph();
+    topo.addVertex(n1);
+    topo.addVertex(n2);
+    topo.addVertex(root);
+    topo.addEdge(n1, root);
+    topo.addEdge(n2, root);
+    Map<UnorderedPair<PIPTreeNode,PIPTreeNode>, Double> bls = Maps.newLinkedHashMap();
+    bls.put(UnorderedPair.of(n1, root), bl/2.0);
+    bls.put(UnorderedPair.of(n2, root), bl/2.0);
+    
+    double [][] trivialRateMtx = new double[][]{{1}};
+    Indexer<Character> trivialIndex = new Indexer<Character>();
+    trivialIndex.addToIndex(PIPProcess.star);
+    
+    PoissonParameters poissonParams = new PoissonParameters(trivialIndex, trivialRateMtx, lambda, mu);
+    
+    PIPLikelihoodCalculator calculator = new PIPLikelihoodCalculator(poissonParams, linearizedMSA, topo, bls, root);
+    double logJoint = calculator.computeDataLogProbabilityGivenTree(); 
+    
+    double statRate = lambda / mu;
+    PoissonDistribution pd = new PoissonDistribution(statRate);
+    double logPrior = Math.log(pd.probability(msa.sequences().get(ta).length()));
+    return logJoint - logPrior;
+  }
+
   public static Pair<PIPString, PIPString> getEndPoints(MSAPoset msa, SequenceId ta,
       SequenceId tb)
   {
