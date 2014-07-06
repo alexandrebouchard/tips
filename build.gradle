@@ -7,7 +7,7 @@ uploadArchives {
     repository(url: "file:///Users/bouchard/Documents/web/public_html/maven/")
     pom.version = "1.0.0"
     pom.artifactId = "tips"
-    pom.groupId = "com.tips"
+    pom.groupId = "ca.ubc.stat"
   }
 }
 
@@ -87,4 +87,4 @@ buildscript {
 // use 'gradle distZip' to create deployable zip
 // use 'gradle installApp' to copy it somewhere
 apply plugin:'application'  
-mainClassName = "tips.Main"
+mainClassName = "tips.pip.Main"

@@ -40,31 +40,26 @@ import tips.pip.PIPString;
 
 public class TestPIP
 {
-  private static SequenceId ta = new SequenceId("A"), tb = new SequenceId("B");
+  
   
   public static void main(String [] args)
   {
-    double lambda =  2.0;
-    double mu = 0.5;
-    double bl =  0.3;
-    Random genRand = new Random(1);
+
+    Main pipMain = new Main();
     
-    PIPProcess process = new PIPProcess(lambda, mu);
     
     for (int repeat = 0; repeat < 10; repeat++)
     {
     
-      MSAPoset msa = PIPProcess.keepOnlyEndPts(process.sample(genRand, bl), ta, tb);
+      MSAPoset msa = pipMain.getGeneratedEndPoints();
       
-      double exact = Math.exp(exact(mu, lambda, bl, msa));
+      double exact = Math.exp(exact(pipMain.mu, pipMain.lambda, pipMain.bl, msa));
       
       System.out.println("exact = " + exact);
       
       System.out.println(msa);
-      Pair<PIPString,PIPString> endPoints = getEndPoints(msa, ta, tb);
-      PIPPotential pot = new PIPPotential();
-      PotProposal<PIPString> prop = new PotProposal<PIPString>(process, pot, new PotPropOptions());
-      ImportanceSampler<PIPString> is = new ImportanceSampler<PIPString>(prop, process);
+      
+      ImportanceSampler<PIPString> is = pipMain.buildImportanceSampler();
       is.nParticles = 1;
       SummaryStatistics weightVariance = new SummaryStatistics();
       for (int i = 0; i < 10; i++)
@@ -72,7 +67,7 @@ public class TestPIP
         SummaryStatistics stat = new SummaryStatistics();
         for (int j = 0; j < 100; j++)
         {
-          Counter<List<PIPString>> samples = is.sample(endPoints.getLeft(), endPoints.getRight(), bl, weightVariance);
+          Counter<List<PIPString>> samples = is.sample(pipMain.getStart(), pipMain.getEnd(), pipMain.bl, weightVariance);
           double estimate = is.estimateZ(samples);
           stat.addValue(Math.pow((estimate - exact), 2));
 //          System.out.println("approx(" + is.nParticles + ") = " + (estimate));
@@ -90,8 +85,8 @@ public class TestPIP
     LinearizedAlignment linearizedMSA = new LinearizedAlignment(msa);
     PIPTreeNode root = PIPTreeNode.nextUnlabelled();
     PIPTreeNode 
-      n1 = PIPTreeNode.withLabel(ta.toString()),
-      n2 = PIPTreeNode.withLabel(tb.toString());
+      n1 = PIPTreeNode.withLabel(Main.ta.toString()),
+      n2 = PIPTreeNode.withLabel(Main.tb.toString());
     UndirectedGraph<PIPTreeNode, UnorderedPair<PIPTreeNode,PIPTreeNode>> topo = GraphUtils.newUndirectedGraph();
     topo.addVertex(n1);
     topo.addVertex(n2);
@@ -113,29 +108,10 @@ public class TestPIP
     
     double statRate = lambda / mu;
     PoissonDistribution pd = new PoissonDistribution(statRate);
-    double logPrior = Math.log(pd.probability(msa.sequences().get(ta).length()));
+    double logPrior = Math.log(pd.probability(msa.sequences().get(Main.ta).length()));
     return logJoint - logPrior;
   }
 
-  public static Pair<PIPString, PIPString> getEndPoints(MSAPoset msa, SequenceId ta,
-      SequenceId tb)
-  {
-    if (msa.sequences().size() != 2)
-      throw new RuntimeException();
-    Set<Integer> aligned1 = new HashSet<Integer>(), aligned2 = new HashSet<Integer>();
-    for (muset.MSAPoset.Column c : msa.columns())
-      if (c.getPoints().size() == 2)
-      {
-        if (c.getPoints().containsKey(ta)) aligned1.add(c.getPoints().get(ta));
-        if (c.getPoints().containsKey(tb)) aligned2.add(c.getPoints().get(tb));
-      }
-    
-    List<Integer> cur; PIPString pips1, pips2;
-    
-    cur = new ArrayList<Integer>(); for (int i = 0; i < msa.sequences().get(ta).length(); i++) cur.add(aligned1.contains(i) ? 0 : -1); pips1 = new PIPString(cur);
-    cur = new ArrayList<Integer>(); for (int i = 0; i < msa.sequences().get(tb).length(); i++) cur.add(aligned2.contains(i) ? 0 : +1); pips2 = new PIPString(cur);
-    
-    return Pair.of(pips1, pips2);
-  }
+
 
 }
