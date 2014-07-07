@@ -3,9 +3,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import muset.Edge;
 import muset.MSAPoset;
 import muset.MSAPoset.Column;
+import muset.util.Edge;
 import muset.SequenceId;
 
 import org.apache.commons.lang3.tuple.Pair;

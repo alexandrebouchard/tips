@@ -12,7 +12,6 @@ import tips.ImportanceSampler;
 import tips.PotPropOptions;
 import tips.PotProposal;
 
-import blang.annotations.Samplers;
 import briefj.collections.Counter;
 import briefj.opt.Option;
 import briefj.opt.OptionSet;

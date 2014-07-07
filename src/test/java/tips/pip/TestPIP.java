@@ -5,8 +5,6 @@ package tips.pip;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.Assert;
-
 import muset.LinearizedAlignment;
 import muset.MSAPoset;
 

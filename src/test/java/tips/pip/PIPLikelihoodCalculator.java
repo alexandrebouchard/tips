@@ -1,30 +1,25 @@
 package tips.pip;
-import java.io.File;
-import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
+import muset.LinearizedAlignment;
+import muset.SequenceId;
 
 import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
 import org.jgrapht.Graphs;
 import org.jgrapht.UndirectedGraph;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
 import bayonet.graphs.GraphUtils;
 import bayonet.math.NumericalUtils;
 import bayonet.math.SpecialFunctions;
 import briefj.collections.UnorderedPair;
 
-import muset.LinearizedAlignment;
-import muset.SequenceId;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 
 
