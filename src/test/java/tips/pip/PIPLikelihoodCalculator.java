@@ -56,7 +56,8 @@ public class PIPLikelihoodCalculator
     this.fullGapIndex = nSitesPlusFullGap - 1;
     this.nCharacters = pip.numberOfCharacter;
     this.logPi = pip.quasiStatLogProbabilities;
-    assert logPi.length == nCharacters;
+    if (logPi.length != nCharacters + 1)
+      throw new RuntimeException();
     this.leaves = Sets.newLinkedHashSet(GraphUtils.leaves(topology)); //new HashSet<PIPTreeNode>(tree.topology().leaveContents());
     initLeftRight(topology, root);
   }
