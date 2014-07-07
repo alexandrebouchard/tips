@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Random;
 
 import muset.MSAPoset;
+import muset.SequenceId;
 
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.junit.Test;
 
 import briefj.collections.Counter;
@@ -98,20 +100,38 @@ public class Doc
     MSAPoset align = pipMain.getGeneratedEndPoints();
     System.out.println(pipMain.getFullGeneratedPath());
     
-    // create a sampler
-    ImportanceSampler<PIPString> is = pipMain.buildImportanceSampler();
-    is.nParticles = 10000;
-    is.rand = new Random(1);
-    pipMain.potentialProposalOptions.automatic = false;
-    
-    // sample
-    Counter<List<PIPString>> samples = is.sample(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
-    
-    System.out.println(samples.toString(20));
-
-    double estimate = is.estimateZ(samples);
-    System.out.println(estimate);
     double exact = Math.exp(TestPIP.exact(pipMain.mu, pipMain.lambda, pipMain.bl, align));
     System.out.println(exact);
+    
+//    TestPIP.fraction = 0.05;
+//    System.out.println(Math.exp(TestPIP.exact(pipMain.mu, pipMain.lambda, pipMain.bl, align)));
+    
+    // create a sampler
+    for (int np = 1; np < 1000; np *= 2)
+    {
+      ImportanceSampler<PIPString> is = pipMain.buildImportanceSampler();
+      is.nParticles = np;
+      is.rand = new Random(1);
+      pipMain.potentialProposalOptions.automatic = false;
+      
+      SummaryStatistics stats = new SummaryStatistics();
+      SummaryStatistics mse = new SummaryStatistics();
+      
+      for (int i = 0; i < 1000; i++)
+      {
+      
+        // sample
+        double estimate = is.estimateZ(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
+        stats.addValue(estimate);
+        mse.addValue(Math.pow(estimate - exact, 2.0));
+      }
+      
+  //    System.out.println(samples.toString(20));
+  
+  //    double estimate = is.estimateZ(samples);
+      System.out.println("np = " + np);
+      System.out.println(stats.getMean());
+      System.out.println(mse.getMean());
+    }
   }
 }

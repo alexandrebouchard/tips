@@ -39,7 +39,7 @@ import com.google.common.collect.Maps;
 public class TestPIP
 {
   private static int nParticleIncreaseRounds = 10;
-  private static int nTestInstances = 10;
+  private static int nTestInstances = 100;
   private static int nTestRepeats = 100;
   private double relativeThreshold = 1e-2;
 
@@ -52,6 +52,7 @@ public class TestPIP
   public void analyticTest()
   {
     PIPMain pipMain = new PIPMain();
+    pipMain.potentialProposalOptions.automatic = false;
     
     for (int testInstance = 0; testInstance < nTestInstances ; testInstance++)
     {
@@ -59,6 +60,9 @@ public class TestPIP
       System.out.println("Generated test case " + testInstance);
       
       MSAPoset msa = pipMain.getGeneratedEndPoints();
+      
+      System.out.println(pipMain.getFullGeneratedPath());
+      
       double exact = Math.exp(exact(pipMain.mu, pipMain.lambda, pipMain.bl, msa));
       System.out.println("exact transition probability: " + exact);
       double threshold = exact * relativeThreshold;
@@ -71,15 +75,18 @@ public class TestPIP
       boolean previousBad = false;
       for (int particleIncreaseRound = 0; particleIncreaseRound < nParticleIncreaseRounds ; particleIncreaseRound++)
       {
-        SummaryStatistics stat = new SummaryStatistics();
+        SummaryStatistics 
+          mseStat = new SummaryStatistics(),
+          meanStat =new SummaryStatistics();
         for (int testRepeat = 0; testRepeat < nTestRepeats ; testRepeat++)
         {
           Counter<List<PIPString>> samples = is.sample(pipMain.getStart(), pipMain.getEnd(), pipMain.bl, weightVariance);
           double estimate = is.estimateZ(samples);
-          stat.addValue(Math.pow((estimate - exact), 2));
+          mseStat.addValue(Math.pow((estimate - exact), 2));
+          meanStat.addValue(estimate);
         }
-        double currentMSE = stat.getMean();
-        System.out.println("mse (" + is.nParticles + " particles, " + nTestRepeats + " repeats): " + currentMSE);
+        double currentMSE = mseStat.getMean();
+        System.out.println("mse (" + is.nParticles + " particles, " + nTestRepeats + " repeats): " + currentMSE + "\tmean: " + meanStat.getMean());
         
         if (currentMSE > previousMSE)
         {
@@ -112,7 +119,7 @@ public class TestPIP
    * @param msa
    * @return
    */
-  private static double exact(double mu, double lambda, double bl, MSAPoset msa)
+  public static double exact(double mu, double lambda, double bl, MSAPoset msa)
   { 
     LinearizedAlignment linearizedMSA = new LinearizedAlignment(msa);
     PIPTreeNode root = PIPTreeNode.nextUnlabelled();
@@ -126,8 +133,8 @@ public class TestPIP
     topo.addEdge(n1, root);
     topo.addEdge(n2, root);
     Map<UnorderedPair<PIPTreeNode,PIPTreeNode>, Double> bls = Maps.newLinkedHashMap();
-    bls.put(UnorderedPair.of(n1, root), bl/2.0);
-    bls.put(UnorderedPair.of(n2, root), bl/2.0);
+    bls.put(UnorderedPair.of(n1, root), fraction * bl);
+    bls.put(UnorderedPair.of(n2, root), (1.0-fraction)*bl);
     
     double [][] trivialRateMtx = new double[][]{{1}};
     Indexer<Character> trivialIndex = new Indexer<Character>();
@@ -143,4 +150,7 @@ public class TestPIP
     double logPrior = Math.log(pd.probability(msa.sequences().get(PIPMain.ta).length()));
     return logJoint - logPrior;
   }
+  
+  // used to test correctness
+  public static double fraction = 0.5;
 }

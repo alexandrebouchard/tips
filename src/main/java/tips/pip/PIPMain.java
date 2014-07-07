@@ -25,7 +25,7 @@ public class PIPMain implements Runnable
 {
   @Option public double lambda =  2.0;
   @Option public double mu = 0.5;
-  @Option public double bl =  0.3;
+  @Option public double bl =  1;
   @Option public Random genRand = new Random(1);
   @Option public int nParticles = 1000;
   
@@ -99,6 +99,12 @@ public class PIPMain implements Runnable
     return generatedEndPoints;
   }
   
+  public MSAPoset getFullGeneratedPath()
+  {
+    ensureGenerated();
+    return fullGeneratedPath;
+  }
+  
   public PIPString getStart()
   {
     ensureGenerated();
@@ -118,5 +124,7 @@ public class PIPMain implements Runnable
   }
   
   public static SequenceId ta = new SequenceId("A"), tb = new SequenceId("B");
+
+
   
 }
