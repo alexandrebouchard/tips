@@ -1,5 +1,5 @@
 package tips.pip;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 
@@ -99,7 +99,7 @@ public class PIPProcess implements SparseProcess<PIPString>, Process<PIPString>
   public MSAPoset createInitMSA(String str)
   {
     SequenceId firstId = indexedTaxon(0);
-    Map<SequenceId,String> seqns = new HashMap<SequenceId, String>();
+    Map<SequenceId,String> seqns = new LinkedHashMap<SequenceId, String>();
     seqns.put(firstId, str);
     return new MSAPoset(seqns);
   }
@@ -159,7 +159,7 @@ public class PIPProcess implements SparseProcess<PIPString>, Process<PIPString>
   public static MSAPoset keepOnlyEndPts(MSAPoset msa, SequenceId first, SequenceId second)
   {
     SequenceId tF = indexedTaxon(0), tL = indexedTaxon(msa.sequences().size()-1);
-    Map<SequenceId,String> newSeqns = new HashMap<SequenceId, String>();
+    Map<SequenceId,String> newSeqns = new LinkedHashMap<SequenceId, String>();
     newSeqns.put(first,  msa.sequences().get(tF));
     newSeqns.put(second, msa.sequences().get(tL));
     MSAPoset result = new MSAPoset(newSeqns);
@@ -181,7 +181,7 @@ public class PIPProcess implements SparseProcess<PIPString>, Process<PIPString>
     
     boolean isIns = sampleBern(insPr, rand);
     
-    Map<SequenceId, String> seqns  = new HashMap<SequenceId, String>(current.sequences());
+    Map<SequenceId, String> seqns  = new LinkedHashMap<SequenceId, String>(current.sequences());
     String newSeq = repeat(star, len + (isIns ? +1 : -1));
     SequenceId newId = indexedTaxon(current.sequences().size());
     seqns.put(newId, newSeq);
@@ -221,23 +221,18 @@ public class PIPProcess implements SparseProcess<PIPString>, Process<PIPString>
   @Override
   public Counter<PIPString> rates(PIPString point)
   {
-//    if (point.cachedRates == null)
-//    {
     Counter<PIPString> rates = new Counter<PIPString>();
       
-      // add ins
-      double nInsPoints = point.characters.size()+1;
-      for (int i = 0; i < nInsPoints; i++)
-        rates.incrementCount(new PIPString(point.characters.subList(0, i), +1, point.characters.subList(i, point.characters.size())), lambda / nInsPoints);
-        
-      // add dels
-      for (int i = 0; i < point.characters.size(); i++)
-        rates.incrementCount(new PIPString(point.characters.subList(0, i), point.characters.subList(i+1, point.characters.size())), mu);
+    // add ins
+    double nInsPoints = point.characters.size()+1;
+    for (int i = 0; i < nInsPoints; i++)
+      rates.incrementCount(new PIPString(point.characters.subList(0, i), +1, point.characters.subList(i, point.characters.size())), lambda / nInsPoints);
       
+    // add dels
+    for (int i = 0; i < point.characters.size(); i++)
+      rates.incrementCount(new PIPString(point.characters.subList(0, i), point.characters.subList(i+1, point.characters.size())), mu);   
       
     return rates;
-//    }
-//    return new Counter<PIPString>(point.cachedRates);
   }
   
 }

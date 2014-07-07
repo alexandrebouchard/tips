@@ -42,6 +42,7 @@ public class PotProposal<S> implements Proposal<S>
     }
 
     List<S> proposed = propose(process, potential, pRand, x, y, options.specialSymbol, greed, stopPr);
+    
     return Pair.of(proposed, Math.exp(pRand.getLogProbability()));
   }
   
