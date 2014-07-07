@@ -19,7 +19,7 @@ public class ImportanceSampler<S>
   public int nParticles = 1000;
   public Proposal<S> proposal;
   public Process<S> process;
-  public Random rand = new Random();
+  public Random rand = new Random(1);
   
   public ImportanceSampler(Proposal<S> proposal, Process<S> process)
   {
