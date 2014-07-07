@@ -37,6 +37,12 @@ public class ImportanceSampler<S>
     return importanceSample(rand, nParticles, process, proposal, x, y, t,  weightVariance);
   }
   
+  public double estimateZ(S x, S y, double t, SummaryStatistics weightVariance)
+  {
+    double sum = (Double) importanceSample(rand, nParticles, process, proposal, x, y, t, weightVariance, false);
+    return sum/((double) nParticles);
+  }
+  
   public double estimateZ(Counter<List<S>> samples)
   {
     return samples.totalCount() / nParticles;
@@ -55,11 +61,19 @@ public class ImportanceSampler<S>
         rand,  nParticles,  process, 
          proposal,  x,  y,  t, null);
   }
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public static <S> Counter<List<S>> importanceSample(
       Random rand, int nParticles, Process<S> process, 
       Proposal<S> proposal, S x, S y, double t, SummaryStatistics weightVariance)
   {
-    Counter<List<S>> result = new Counter<List<S>>();
+    return (Counter) importanceSample(rand, nParticles, process, proposal, x, y, t, weightVariance, true);
+  }
+  private static <S> Object importanceSample(
+      Random rand, int nParticles, Process<S> process, 
+      Proposal<S> proposal, S x, S y, double t, SummaryStatistics weightVariance, boolean keepSample)
+  {
+    Counter<List<S>> result = keepSample ? new Counter<List<S>>() : null;
+    double sum = 0.0;
     
     for (int pIdx = 0; pIdx < nParticles; pIdx++)
     {
@@ -71,11 +85,14 @@ public class ImportanceSampler<S>
       
       if (weightVariance != null) weightVariance.addValue(integral/proposed.getRight());
       
-      result.incrementCount(proposed.getLeft(), integral/proposed.getRight());
+      if (keepSample)
+        result.incrementCount(proposed.getLeft(), integral/proposed.getRight());
+      else
+        sum += integral/proposed.getRight();
     }
     
     
-    return result;
+    return keepSample ? result : sum;
   }
   
   public static <S> double integral(Process<S> process, List<S> proposed, double t)
