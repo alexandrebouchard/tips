@@ -2,7 +2,6 @@ package tips.pip;
 
 
 
-import java.util.List;
 import java.util.Map;
 
 import muset.LinearizedAlignment;
@@ -16,8 +15,8 @@ import org.junit.Test;
 import tips.ImportanceSampler;
 import bayonet.graphs.GraphUtils;
 import briefj.Indexer;
-import briefj.collections.Counter;
 import briefj.collections.UnorderedPair;
+import briefj.opt.Option;
 
 import com.google.common.collect.Maps;
 
@@ -31,17 +30,18 @@ import com.google.common.collect.Maps;
  * Check that we converge to that analytical value using the TIPS
  * approximation (throws if we do not get under a relative threshold
  * or if there is not an mse decrease twice in a row when increasing
- * the number of particles by a factor of 2).
+ * the number of particles by a multiplicative factor).
  * 
  * @author Alexandre Bouchard (alexandre.bouchard@gmail.com)
  *
  */
 public class TestPIP
 {
-  private static int nParticleIncreaseRounds = 10;
-  private static int nTestInstances = 100;
-  private static int nTestRepeats = 100;
-  private double relativeThreshold = 1e-2;
+  private static int nParticleIncreaseRounds = 3;
+  private static int nTestInstances = 10;
+  private static int nTestRepeats = 3;
+  private double relativeThreshold = 1e-3;
+  private double multiplicativeFactor = 1e2;
 
   public static void main(String [] args)
   {
@@ -52,41 +52,36 @@ public class TestPIP
   public void analyticTest()
   {
     PIPMain pipMain = new PIPMain();
-    pipMain.potentialProposalOptions.automatic = false;
+    pipMain.ensureLinearizationUnique = true;
+    pipMain.lambda =  2.0;
+    pipMain.mu = 0.5;
+    pipMain.bl =  0.3;
     
     for (int testInstance = 0; testInstance < nTestInstances ; testInstance++)
     {
       pipMain.generateNextData();
       System.out.println("Generated test case " + testInstance);
-      
-      MSAPoset msa = pipMain.getGeneratedEndPoints();
-      
-      System.out.println(pipMain.getFullGeneratedPath());
+      MSAPoset msa = (pipMain.getGeneratedEndPoints());
       
       double exact = Math.exp(exact(pipMain.mu, pipMain.lambda, pipMain.bl, msa));
-      System.out.println("exact transition probability: " + exact);
-      double threshold = exact * relativeThreshold;
+      double threshold = relativeThreshold * exact;
       System.out.println("threshold: " + threshold);
+      System.out.println("exact transition probability: " + exact);
       
       ImportanceSampler<PIPString> is = pipMain.buildImportanceSampler();
       is.nParticles = 1;
-      SummaryStatistics weightVariance = new SummaryStatistics();
       double previousMSE = Double.POSITIVE_INFINITY;
       boolean previousBad = false;
       for (int particleIncreaseRound = 0; particleIncreaseRound < nParticleIncreaseRounds ; particleIncreaseRound++)
       {
-        SummaryStatistics 
-          mseStat = new SummaryStatistics(),
-          meanStat =new SummaryStatistics();
+        SummaryStatistics mseStat = new SummaryStatistics();
         for (int testRepeat = 0; testRepeat < nTestRepeats ; testRepeat++)
         {
-          Counter<List<PIPString>> samples = is.sample(pipMain.getStart(), pipMain.getEnd(), pipMain.bl, weightVariance);
-          double estimate = is.estimateZ(samples);
+          double estimate = is.estimateZ(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
           mseStat.addValue(Math.pow((estimate - exact), 2));
-          meanStat.addValue(estimate);
         }
         double currentMSE = mseStat.getMean();
-        System.out.println("mse (" + is.nParticles + " particles, " + nTestRepeats + " repeats): " + currentMSE + "\tmean: " + meanStat.getMean());
+        System.out.println("mse (" + is.nParticles + " particles, " + nTestRepeats + " repeats): " + currentMSE);
         
         if (currentMSE > previousMSE)
         {
@@ -98,7 +93,7 @@ public class TestPIP
         else
           previousBad = false;
         
-        is.nParticles *= 2;
+        is.nParticles *= multiplicativeFactor;
         previousMSE = currentMSE;
       }
       
@@ -151,6 +146,6 @@ public class TestPIP
     return logJoint - logPrior;
   }
   
-  // used to test correctness
-  public static double fraction = 0.5;
+  // used to test correctness in early tests (get same value for each value in (0,1) by reversibility
+  private static final double fraction = 0.5;
 }

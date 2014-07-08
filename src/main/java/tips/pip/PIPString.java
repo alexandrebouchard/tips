@@ -3,9 +3,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-
+/**
+ * A representation of strings specialized for end point simulation.
+ * 
+ * @author Alexandre Bouchard (alexandre.bouchard@gmail.com)
+ *
+ */
 public class PIPString
 {
+  /**
+   */
   public final List<Integer> characters;
   private int [] cachedPluses = null;
   private int cachedNZeroes = Integer.MIN_VALUE;

@@ -1,20 +1,20 @@
 package tips;
 
-import java.util.List;
+
 import java.util.Random;
 
 import muset.MSAPoset;
-import muset.SequenceId;
 
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.junit.Test;
 
-import briefj.collections.Counter;
-
 import tips.pip.PIPMain;
+import tips.pip.PIPProcess;
 import tips.pip.PIPString;
 import tips.pip.TestPIP;
 import tutorialj.Tutorial;
+
+import com.google.common.collect.Sets;
 
 
 
@@ -91,47 +91,56 @@ public class Doc
   {
     PIPMain pipMain = new PIPMain();
     
-    // set process parameters
+    // set some process parameters
     pipMain.bl = 0.5;
     pipMain.mu = 0.5;
-    pipMain.lambda = 2.5;
+    pipMain.lambda = 5;
+    pipMain.ensureLinearizationUnique = true;
     
     // generate data
     MSAPoset align = pipMain.getGeneratedEndPoints();
-    System.out.println(pipMain.getFullGeneratedPath());
+    System.out.println(align);
     
     double exact = Math.exp(TestPIP.exact(pipMain.mu, pipMain.lambda, pipMain.bl, align));
-    System.out.println(exact);
-    
-//    TestPIP.fraction = 0.05;
-//    System.out.println(Math.exp(TestPIP.exact(pipMain.mu, pipMain.lambda, pipMain.bl, align)));
+    System.out.println("exact = " + exact);
     
     // create a sampler
-    for (int np = 1; np < 1000; np *= 2)
-    {
-      ImportanceSampler<PIPString> is = pipMain.buildImportanceSampler();
-      is.nParticles = np;
-      is.rand = new Random(1);
-      pipMain.potentialProposalOptions.automatic = false;
+    ImportanceSampler<PIPString> is = pipMain.buildImportanceSampler();
+    is.nParticles = 10000;
+    is.rand = new Random(1);
+    pipMain.potentialProposalOptions.automatic = true;
       
-      SummaryStatistics stats = new SummaryStatistics();
-      SummaryStatistics mse = new SummaryStatistics();
+    // sample
+    double estimate = is.estimateZ(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
+    System.out.println("TIPS estimate = " + estimate);
       
-      for (int i = 0; i < 1000; i++)
-      {
-      
-        // sample
-        double estimate = is.estimateZ(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
-        stats.addValue(estimate);
-        mse.addValue(Math.pow(estimate - exact, 2.0));
-      }
-      
-  //    System.out.println(samples.toString(20));
+    // compare to some alternate methods
+    System.out.println("approximate exhaustive sum = " + is.exhaustiveSum(pipMain.getStart(), pipMain.getEnd(), pipMain.bl));
+    System.out.println("naive IS = " + standardIS(pipMain.getGeneratedEndPoints(), pipMain.bl, pipMain.getProcess(), is.nParticles, is.rand, null));
+  }
   
-  //    double estimate = is.estimateZ(samples);
-      System.out.println("np = " + np);
-      System.out.println(stats.getMean());
-      System.out.println(mse.getMean());
+  public static double standardIS(MSAPoset ref,
+      double bl2, PIPProcess process, int nPart,Random rand, SummaryStatistics weightStats)
+  {
+    double num = 0.0;
+    
+    for (int i = 0; i < nPart ; i++)
+    {
+      MSAPoset temp = process.createInitMSA(ref.sequences().get(PIPMain.ta));
+      // simulate
+      MSAPoset proposed = PIPProcess.keepOnlyEndPts(process.sample(rand, temp, bl2), PIPMain.ta, PIPMain.tb);
+      
+      if (Sets.newLinkedHashSet(ref.edges()).equals(Sets.newLinkedHashSet(proposed.edges())) && ref.sequences().equals(proposed.sequences()))
+      {
+        num++;
+        if (weightStats!=null) weightStats.addValue(1.0);
+      }
+      else
+      {
+        if (weightStats!=null) weightStats.addValue(0.0);
+      }
     }
+    
+    return (num+1)/(nPart+2);
   }
 }

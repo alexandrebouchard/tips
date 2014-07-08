@@ -115,9 +115,7 @@ public class PIPLikelihoodCalculator
     prepareCommonAncestorIndicators();
     prepareLogInsertLocationPrs();
     double [] logZs = computeLogZ_phase1();
-    final double logPhi = logPhi(computeZ_phase2_gap(logZs));
-    System.out.println("phi = " + Math.exp(logPhi));
-    return computeLogZ_phase2_nonGap(logZs) + logPhi;
+    return computeLogZ_phase2_nonGap(logZs) + logPhi(computeZ_phase2_gap(logZs));
   }
   
   // all private below

@@ -2,12 +2,15 @@ package tips;
 
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
+
+import com.google.common.collect.Sets;
 
 import briefj.collections.Counter;
  
@@ -93,6 +96,33 @@ public class ImportanceSampler<S>
     
     
     return keepSample ? result : sum;
+  }
+  
+  public double exhaustiveSum(S x, S y, double t)
+  {
+    return exhaustiveSum(rand, nParticles, process, proposal, x, y, t);
+  }
+  
+  public static <S> double exhaustiveSum(Random rand, int nTries, Process<S> process, 
+      Proposal<S> proposal, S x, S y, double t)
+  {
+    double sum = 0.0;
+    Set<List<S>> covered = Sets.newHashSet();
+    
+    for (int trial = 0; trial < nTries; trial++)
+    {
+      List<S> proposed = proposal.propose(rand, x, y, t).getLeft();
+      if (!covered.contains(proposed))
+      {
+        covered.add(proposed);
+        double integral = integral(process, proposed, t);
+        for (int jIdx = 0; jIdx < proposed.size() - 1; jIdx++)
+          integral *= process.transitionProbability(proposed.get(jIdx), proposed.get(jIdx+1));
+        sum += integral;
+      }
+    }
+    
+    return sum;
   }
   
   public static <S> double integral(Process<S> process, List<S> proposed, double t)
