@@ -5,16 +5,14 @@ import java.util.Random;
 
 import muset.MSAPoset;
 
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.junit.Test;
 
 import tips.pip.PIPMain;
-import tips.pip.PIPProcess;
 import tips.pip.PIPString;
 import tips.pip.TestPIP;
+import tips.utils.Baselines;
 import tutorialj.Tutorial;
 
-import com.google.common.collect.Sets;
 
 
 
@@ -119,32 +117,7 @@ public class Doc
     System.out.println("TIPS estimate = " + estimate);
       
     // compare to some alternate methods
-    System.out.println("approximate exhaustive sum = " + is.exhaustiveSum(pipMain.getStart(), pipMain.getEnd(), pipMain.bl));
-    System.out.println("naive IS = " + standardIS(pipMain.getGeneratedEndPoints(), pipMain.bl, pipMain.getProcess(), is.nParticles, is.rand, null));
-  }
-  
-  public static double standardIS(MSAPoset ref,
-      double bl2, PIPProcess process, int nPart,Random rand, SummaryStatistics weightStats)
-  {
-    double num = 0.0;
-    
-    for (int i = 0; i < nPart ; i++)
-    {
-      MSAPoset temp = process.createInitMSA(ref.sequences().get(PIPMain.ta));
-      // simulate
-      MSAPoset proposed = PIPProcess.keepOnlyEndPts(process.sample(rand, temp, bl2), PIPMain.ta, PIPMain.tb);
-      
-      if (Sets.newLinkedHashSet(ref.edges()).equals(Sets.newLinkedHashSet(proposed.edges())) && ref.sequences().equals(proposed.sequences()))
-      {
-        num++;
-        if (weightStats!=null) weightStats.addValue(1.0);
-      }
-      else
-      {
-        if (weightStats!=null) weightStats.addValue(0.0);
-      }
-    }
-    
-    return (num+1)/(nPart+2);
+    System.out.println("approximate exhaustive sum = " + Baselines.exhaustiveSum(is.rand, is.nParticles, pipMain.getProcess(), pipMain.getProposal(), pipMain.getStart(), pipMain.getEnd(), pipMain.bl));
+    System.out.println("naive IS = " + Baselines.standardIS(pipMain.getGeneratedEndPoints(), pipMain.bl, pipMain.getProcess(), is.nParticles, is.rand, null));
   }
 }

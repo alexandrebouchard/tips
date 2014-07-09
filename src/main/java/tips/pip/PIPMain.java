@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import tips.Proposal;
 import tips.TimeIntegratedPathSampler;
 import tips.utils.PotPropOptions;
 import tips.utils.PotProposal;
@@ -63,11 +64,15 @@ public class PIPMain implements Runnable
   
   public TimeIntegratedPathSampler<PIPString> buildImportanceSampler()
   {
-    PIPProcess process = getProcess();
-    PIPPotential pot = new PIPPotential();
-    PotProposal<PIPString> prop = new PotProposal<PIPString>(process, pot, potentialProposalOptions);
-    return new TimeIntegratedPathSampler<PIPString>(prop, process);
+    return new TimeIntegratedPathSampler<PIPString>(getProposal(), getProcess());
   }
+  
+  public Proposal<PIPString> getProposal()
+  {
+    PIPPotential pot = new PIPPotential();
+    return new PotProposal<PIPString>(getProcess(), pot, potentialProposalOptions);
+  }
+
 
   public void generateNextData()
   {
@@ -178,7 +183,4 @@ public class PIPMain implements Runnable
   }
   
   public static SequenceId ta = new SequenceId("A"), tb = new SequenceId("B");
-
-
-  
 }
