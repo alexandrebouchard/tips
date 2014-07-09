@@ -9,6 +9,8 @@ import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
 
+import tips.utils.PotPropOptions;
+import tips.utils.PotProposal;
 import tips.utils.ProcessUtils;
 
 
@@ -27,6 +29,12 @@ public class TimeIntegratedPathSampler<S>
   public TimeIntegratedPathSampler(Proposal<S> proposal, Process<S> process)
   {
     this.proposal = proposal;
+    this.process = process;
+  }
+  
+  public TimeIntegratedPathSampler(Potential<S> potential, Process<S> process)
+  {
+    this.proposal = new PotProposal<S>(process, potential, new PotPropOptions());
     this.process = process;
   }
   

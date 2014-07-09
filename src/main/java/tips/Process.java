@@ -15,5 +15,12 @@ import briefj.collections.Counter;
  */
 public interface Process<S>
 {
+  /**
+   * The rates of departure from the given point (i.e. the non-zero
+   * off-diagonal entries of the rate matrix).
+   * 
+   * @param point
+   * @return
+   */
   public Counter<S> rates(S point);
 }

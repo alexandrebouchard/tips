@@ -7,10 +7,14 @@ import muset.MSAPoset;
 
 import org.junit.Test;
 
+
+import tips.bd.SimpleBirthDeathPotential;
+import tips.bd.SimpleBirthDeathProcess;
 import tips.pip.PIPMain;
 import tips.pip.PIPString;
 import tips.pip.TestPIP;
 import tips.utils.Baselines;
+import tips.utils.PotProposal;
 import tutorialj.Tutorial;
 
 
@@ -106,7 +110,7 @@ public class Doc
       System.out.println("exact = " + exact);
     }
     
-    // create a sampler
+    // create a TIPS sampler
     TimeIntegratedPathSampler<PIPString> is = pipMain.buildImportanceSampler();
     is.nParticles = 10000;
     is.rand = new Random(1);
@@ -117,7 +121,69 @@ public class Doc
     System.out.println("TIPS estimate = " + estimate);
       
     // compare to some alternate methods
-    System.out.println("approximate exhaustive sum = " + Baselines.exhaustiveSum(is.rand, is.nParticles, pipMain.getProcess(), pipMain.getProposal(), pipMain.getStart(), pipMain.getEnd(), pipMain.bl));
-    System.out.println("naive IS = " + Baselines.standardIS(pipMain.getGeneratedEndPoints(), pipMain.bl, pipMain.getProcess(), is.nParticles, is.rand, null));
+    System.out.println("approximate exhaustive sum = " + 
+        Baselines.exhaustiveSum(is.rand, is.nParticles, pipMain.getProcess(), pipMain.getProposal(), 
+            pipMain.getStart(), pipMain.getEnd(), pipMain.bl));
+    System.out.println("naive IS = " + 
+        Baselines.standardIS(pipMain.getGeneratedEndPoints(), pipMain.bl, pipMain.getProcess(), 
+            is.nParticles, is.rand, null));
   }
+  
+  /**
+   * Extending to other processes
+   * ----------------------------
+   * 
+   * This is done in three steps:
+   * 
+   * ### Specifying the process
+   * 
+   * The first step consists in writing a class implementing 
+   * the Process interface. This in turns means implementing 
+   * a single method giving the rates of departure of a given 
+   * state.
+   * 
+   * Here is a simple example:
+   */
+  @Tutorial(showSource = false, nextStep = SimpleBirthDeathProcess.class)
+  public void extending1() {}
+  
+  /**
+   * ### Creating a potential
+   * 
+   * The second step is to create a potential that will guide
+   * the proposed paths towards the end point.
+   * 
+   * Here is a simple example:
+   */
+  @Tutorial(showSource = false, nextStep = SimpleBirthDeathPotential.class)
+  public void extending2() {}
+  
+  /**
+   * ### Calling TIPS
+   * 
+   * Here is an example of how to call TIPS with a custom process:
+   * 
+   */
+  @Tutorial(showSource = true)
+  @Test
+  public void extending3() 
+  {
+    SimpleBirthDeathProcess process = new SimpleBirthDeathProcess();
+    SimpleBirthDeathPotential potential = new SimpleBirthDeathPotential();
+    TimeIntegratedPathSampler<Integer> sampler = new TimeIntegratedPathSampler<Integer>(potential, process);
+    
+    double t = 5;
+    double estimate = sampler.estimateZ(1, 0, t);
+    System.out.println(estimate);
+  }
+  
+  /**
+   * Limitations
+   * -----------
+   * 
+   * - The code currently does not support absorbing state, but this would be easy to fix.
+   * - The method works best when the number of transitions between the end points is not too large.
+   */
+  @Tutorial(showSource = false)
+  public void limitations() {}
 }
