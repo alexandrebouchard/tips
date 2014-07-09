@@ -1,4 +1,4 @@
-package tips;
+package tips.utils;
 
 
 
@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.commons.lang3.tuple.Pair;
+
+import tips.Potential;
+import tips.Proposal;
+import tips.SparseProcess;
 
 import bayonet.math.NumericalUtils;
 import briefj.collections.Counter;

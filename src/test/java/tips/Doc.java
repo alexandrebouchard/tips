@@ -73,9 +73,7 @@ public class Doc
    *   - Deselect ``Copy projects into workspace`` to avoid having duplicates
    */
   @Tutorial(startTutorial = "README.md", showSource = false)
-  public void installInstructions()
-  {
-  }
+  public void installInstructions() {}
   
   /**
    * Example: PIP transition probabilities
@@ -84,6 +82,8 @@ public class Doc
    * Here is a simple example showing how to sample discrete paths and compute 
    * transition probabilities for the Poisson Indel Process (PIP) 
    * (http://www.pnas.org/content/early/2012/12/27/1220450110.full.pdf).
+   * 
+   * For more comprehensive tests, see TestPIP.
    */
   @Tutorial(showLink = true, linkPrefix = "src/test/java/")
   @Test
@@ -101,11 +101,15 @@ public class Doc
     MSAPoset align = pipMain.getGeneratedEndPoints();
     System.out.println(align);
     
-    double exact = Math.exp(TestPIP.exact(pipMain.mu, pipMain.lambda, pipMain.bl, align));
-    System.out.println("exact = " + exact);
+    if (pipMain.ensureLinearizationUnique)
+    {
+      // compare to the exact transition probability
+      double exact = Math.exp(TestPIP.exact(pipMain.mu, pipMain.lambda, pipMain.bl, align));
+      System.out.println("exact = " + exact);
+    }
     
     // create a sampler
-    ImportanceSampler<PIPString> is = pipMain.buildImportanceSampler();
+    TimeIntegratedPathSampler<PIPString> is = pipMain.buildImportanceSampler();
     is.nParticles = 10000;
     is.rand = new Random(1);
     pipMain.potentialProposalOptions.automatic = true;

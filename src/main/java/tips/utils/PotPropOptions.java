@@ -1,4 +1,4 @@
-package tips;
+package tips.utils;
 
 import java.util.Random;
 

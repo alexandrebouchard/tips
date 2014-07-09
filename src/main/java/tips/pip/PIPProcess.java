@@ -11,8 +11,8 @@ import muset.SequenceId;
 import org.apache.commons.lang3.tuple.Pair;
 
 import tips.Process;
-import tips.ProposalRandom;
 import tips.SparseProcess;
+import tips.utils.ProposalRandom;
 import bayonet.distributions.Exponential;
 import bayonet.math.SpecialFunctions;
 import briefj.collections.Counter;

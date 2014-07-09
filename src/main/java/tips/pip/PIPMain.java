@@ -9,9 +9,9 @@ import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import tips.ImportanceSampler;
-import tips.PotPropOptions;
-import tips.PotProposal;
+import tips.TimeIntegratedPathSampler;
+import tips.utils.PotPropOptions;
+import tips.utils.PotProposal;
 
 import briefj.BriefCollections;
 import briefj.collections.Counter;
@@ -55,18 +55,18 @@ public class PIPMain implements Runnable
   public void run()
   {
     generateNextData();
-    ImportanceSampler<PIPString> sampler = buildImportanceSampler();
+    TimeIntegratedPathSampler<PIPString> sampler = buildImportanceSampler();
     sampler.nParticles = nParticles;
     Counter<List<PIPString>> sample = sampler.sample(getStart(), getEnd(), bl);
     System.out.println(sampler.estimateZ(sample));
   }
   
-  public ImportanceSampler<PIPString> buildImportanceSampler()
+  public TimeIntegratedPathSampler<PIPString> buildImportanceSampler()
   {
     PIPProcess process = getProcess();
     PIPPotential pot = new PIPPotential();
     PotProposal<PIPString> prop = new PotProposal<PIPString>(process, pot, potentialProposalOptions);
-    return new ImportanceSampler<PIPString>(prop, process);
+    return new TimeIntegratedPathSampler<PIPString>(prop, process);
   }
 
   public void generateNextData()

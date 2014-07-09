@@ -12,11 +12,10 @@ import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.jgrapht.UndirectedGraph;
 import org.junit.Test;
 
-import tips.ImportanceSampler;
+import tips.TimeIntegratedPathSampler;
 import bayonet.graphs.GraphUtils;
 import briefj.Indexer;
 import briefj.collections.UnorderedPair;
-import briefj.opt.Option;
 
 import com.google.common.collect.Maps;
 
@@ -68,7 +67,7 @@ public class TestPIP
       System.out.println("threshold: " + threshold);
       System.out.println("exact transition probability: " + exact);
       
-      ImportanceSampler<PIPString> is = pipMain.buildImportanceSampler();
+      TimeIntegratedPathSampler<PIPString> is = pipMain.buildImportanceSampler();
       is.nParticles = 1;
       double previousMSE = Double.POSITIVE_INFINITY;
       boolean previousBad = false;

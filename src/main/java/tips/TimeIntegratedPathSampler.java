@@ -17,14 +17,14 @@ import briefj.collections.Counter;
 
 
 
-public class ImportanceSampler<S>
+public class TimeIntegratedPathSampler<S>
 {
   public int nParticles = 1000;
   public Proposal<S> proposal;
   public Process<S> process;
   public Random rand = new Random(1);
   
-  public ImportanceSampler(Proposal<S> proposal, Process<S> process)
+  public TimeIntegratedPathSampler(Proposal<S> proposal, Process<S> process)
   {
     this.proposal = proposal;
     this.process = process;
