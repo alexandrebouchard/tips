@@ -11,14 +11,12 @@ import muset.SequenceId;
 import org.apache.commons.lang3.tuple.Pair;
 
 import tips.Process;
-import tips.SparseProcess;
-import tips.utils.ProposalRandom;
 import bayonet.distributions.Exponential;
 import bayonet.math.SpecialFunctions;
 import briefj.collections.Counter;
 
 
-public class PIPProcess implements SparseProcess<PIPString>, Process<PIPString>
+public class PIPProcess implements Process<PIPString>
 {
   public final double lambda, mu;
   
@@ -28,32 +26,9 @@ public class PIPProcess implements SparseProcess<PIPString>, Process<PIPString>
     this.lambda = lambda;
     this.mu = mu;
   }
-
-  @Override
-  public double holdRate(PIPString x)
-  {
-    return rates(x).totalCount();
-  }
-
-  @Override
-  public double transitionProbability(PIPString x, PIPString y)
-  {
-    Counter<PIPString> rates = rates(x);
-    rates.normalize();
-    return rates.getCount(y);
-  }
-
-  @Override
-  public PIPString sample(Random rand, PIPString x)
-  {
-    Counter<PIPString> rates = rates(x);
-    rates.normalize();
-    return ProposalRandom.sampleCounter(rates, rand);
-  }
   
   public MSAPoset sampleStationary(Random rand)
   {
-    
     return createInitMSA(repeat(star, (int)samplePoisson(rand, lambda/mu)));
   }
   

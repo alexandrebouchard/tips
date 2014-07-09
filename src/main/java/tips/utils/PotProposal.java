@@ -10,7 +10,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import tips.Potential;
 import tips.Proposal;
-import tips.SparseProcess;
+import tips.Process;
 
 import bayonet.math.NumericalUtils;
 import briefj.collections.Counter;
@@ -21,11 +21,11 @@ import briefj.collections.Counter;
 
 public class PotProposal<S> implements Proposal<S>
 {
-  private final SparseProcess<S> process;
+  private final Process<S> process;
   private final Potential<S> potential;
   private final PotPropOptions options;
   
-  public PotProposal(SparseProcess<S> process, Potential<S> potential,
+  public PotProposal(Process<S> process, Potential<S> potential,
       PotPropOptions options)
   {
     super();
@@ -50,7 +50,7 @@ public class PotProposal<S> implements Proposal<S>
     return Pair.of(proposed, Math.exp(pRand.getLogProbability()));
   }
   
-  public static <S> List<S> propose(SparseProcess<S> process, Potential<S> pot, ProposalRandom pRand, S firstEndPoint, S lastEndPoint, Object specialSymbol, double greed, double stopPr)
+  public static <S> List<S> propose(Process<S> process, Potential<S> pot, ProposalRandom pRand, S firstEndPoint, S lastEndPoint, Object specialSymbol, double greed, double stopPr)
   {
     List<S> result = new ArrayList<S>();
     

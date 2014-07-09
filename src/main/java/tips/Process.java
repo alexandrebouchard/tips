@@ -1,12 +1,19 @@
 package tips;
 
-import java.util.Random;
+
+import briefj.collections.Counter;
 
 
 
+
+/**
+ * A Continuous time Markov chain.
+ * 
+ * @author Alexandre Bouchard (alexandre.bouchard@gmail.com)
+ *
+ * @param <S> The type of the states
+ */
 public interface Process<S>
 {
-  public double holdRate(S x);
-  public double transitionProbability(S x, S y);
-  public S sample(Random rand, S x);
+  public Counter<S> rates(S point);
 }

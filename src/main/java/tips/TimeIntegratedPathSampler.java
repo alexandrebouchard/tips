@@ -9,6 +9,8 @@ import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
 
+import tips.utils.ProcessUtils;
+
 
 import briefj.collections.Counter;
  
@@ -51,7 +53,7 @@ public class TimeIntegratedPathSampler<S>
   
   public double estimateZ(S x, S y, double t)
   {
-    return estimateZ(importanceSample(rand, nParticles, process, proposal, x, y, t));
+    return estimateZ(x, y, t, null);
   }
   
   public static <S> Counter<List<S>> importanceSample(
@@ -62,6 +64,7 @@ public class TimeIntegratedPathSampler<S>
         rand,  nParticles,  process, 
          proposal,  x,  y,  t, null);
   }
+  
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public static <S> Counter<List<S>> importanceSample(
       Random rand, int nParticles, Process<S> process, 
@@ -69,6 +72,7 @@ public class TimeIntegratedPathSampler<S>
   {
     return (Counter) importanceSample(rand, nParticles, process, proposal, x, y, t, weightVariance, true);
   }
+  
   private static <S> Object importanceSample(
       Random rand, int nParticles, Process<S> process, 
       Proposal<S> proposal, S x, S y, double t, SummaryStatistics weightVariance, boolean keepSample)
@@ -82,7 +86,7 @@ public class TimeIntegratedPathSampler<S>
       double integral = integral(process, proposed.getLeft(), t);
       List<S> proposedJumps = proposed.getLeft();
       for (int jIdx = 0; jIdx < proposedJumps.size() - 1; jIdx++)
-        integral *= process.transitionProbability(proposedJumps.get(jIdx), proposedJumps.get(jIdx+1));
+        integral *= ProcessUtils.transitionProbability(process, proposedJumps.get(jIdx), proposedJumps.get(jIdx+1));
       
       if (weightVariance != null) weightVariance.addValue(integral/proposed.getRight());
       
@@ -91,7 +95,6 @@ public class TimeIntegratedPathSampler<S>
       else
         sum += integral/proposed.getRight();
     }
-    
     
     return keepSample ? result : sum;
   }
@@ -103,7 +106,7 @@ public class TimeIntegratedPathSampler<S>
     double [][] mtx = new double[size][size];
     for (int i = 0; i < proposed.size(); i++)
     {
-      final double curRate = process.holdRate(proposed.get(i));
+      final double curRate = ProcessUtils.holdRate(process, proposed.get(i));
       mtx[i][i] = -curRate * t;
       mtx[i][i+1] = curRate * t;
     }
