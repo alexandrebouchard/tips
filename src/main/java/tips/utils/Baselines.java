@@ -83,7 +83,7 @@ public class Baselines
       if (!covered.contains(proposed))
       {
         covered.add(proposed);
-        double integral = TimeIntegratedPathSampler.integral(process, proposed, t);
+        double integral = TimeIntegratedPathSampler.marginalizeSojournTimes(process, proposed, t);
         for (int jIdx = 0; jIdx < proposed.size() - 1; jIdx++)
           integral *= ProcessUtils.transitionProbability(process, proposed.get(jIdx), proposed.get(jIdx+1));
         sum += integral;

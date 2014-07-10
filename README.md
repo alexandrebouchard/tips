@@ -3,10 +3,15 @@
 Summary
 -------
 
-TIPS is an approximate method to compute continuous time Markov chain (CTMC) end-point
-probabilities. 
+TIPS is a method for approximate continuous time Markov chain (CTMC) end-point
+probability computation and path sampling. 
 
-See http://www.stat.ubc.ca/~bouchard/pub/icml2014.pdf
+If you use this library in your work, please cite the following paper:
+``Monir Hajiaghayi, Bonnie Kirkpatrick, Liangliang Wang and Alexandre Bouchard-Côté. 
+(2014) Efficient Continuous-Time Markov Chain Estimation. International Conference on 
+Machine Learning (ICML).``
+
+See: http://www.stat.ubc.ca/~bouchard/pub/icml2014.pdf
 
 TIPS stands for Time Integrated Path Sampling.
 
@@ -61,6 +66,7 @@ transition probabilities for the Poisson Indel Process (PIP)
 For more comprehensive tests, see TestPIP.
 
 ```java
+System.out.println("PIP example");
 PIPMain pipMain = new PIPMain();
 
 // set some process parameters
@@ -71,14 +77,10 @@ pipMain.ensureLinearizationUnique = true;
 
 // generate data
 MSAPoset align = pipMain.getGeneratedEndPoints();
-System.out.println(align);
 
-if (pipMain.ensureLinearizationUnique)
-{
-  // compare to the exact transition probability
-  double exact = Math.exp(TestPIP.exact(pipMain.mu, pipMain.lambda, pipMain.bl, align));
-  System.out.println("exact = " + exact);
-}
+// compare to the exact transition probability
+double exact = Math.exp(TestPIP.exact(pipMain.mu, pipMain.lambda, pipMain.bl, align));
+System.out.println("exact = " + exact);
 
 // create a TIPS sampler
 TimeIntegratedPathSampler<PIPString> is = pipMain.buildImportanceSampler();
@@ -87,16 +89,18 @@ is.rand = new Random(1);
 pipMain.potentialProposalOptions.automatic = true;
 
 // sample
-double estimate = is.estimateZ(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
-System.out.println("TIPS estimate = " + estimate);
+double estimate = is.estimateTransitionPr(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
+System.out.println("TIPS = " + estimate);
+Assert.assertEquals(exact, estimate, 1e-6);
 
 // compare to some alternate methods
-System.out.println("approximate exhaustive sum = " + 
+System.out.println("approximateExhaustiveSum = " + 
     Baselines.exhaustiveSum(is.rand, is.nParticles, pipMain.getProcess(), pipMain.getProposal(), 
         pipMain.getStart(), pipMain.getEnd(), pipMain.bl));
-System.out.println("naive IS = " + 
+System.out.println("naiveIS = " + 
     Baselines.standardIS(pipMain.getGeneratedEndPoints(), pipMain.bl, pipMain.getProcess(), 
         is.nParticles, is.rand, null));
+System.out.println();
 ```
 <sub>From:[tips.Doc](src/test/java//tips/Doc.java)</sub>
 
@@ -115,6 +119,13 @@ state.
 Here is a simple example:
 
 
+(Note: using TIPS for a birth death process is overkill, as
+specialized methods exist for numerical calculation of transition
+probabilities of birth-death process, see 
+FW Crawford and MA Suchard. Transition probabilities for general 
+birth-death processes with applications in ecology, genetics, 
+and evolution. J Math Biol, 65:553-580, 2012.)
+
 ```java
 public briefj.collections.Counter rates(java.lang.Integer)
 {
@@ -132,8 +143,17 @@ public briefj.collections.Counter rates(java.lang.Integer)
 The second step is to create a potential that will guide
 the proposed paths towards the end point.
 
-Here is a simple example:
+Again, here is a simple example:
 
+
+```java
+public double get(java.lang.Integer,java.lang.Integer)
+{
+    // Just return how far we are from the target.
+    return Math.abs(proposed - target);
+}
+```
+<sub>From:[tips.bd.SimpleBirthDeathPotential](src/test/java//tips/bd/SimpleBirthDeathPotential.java)</sub>
 
 ### Calling TIPS
 
@@ -141,13 +161,19 @@ Here is an example of how to call TIPS with a custom process:
 
 
 ```java
+System.out.println("BD example");
 SimpleBirthDeathProcess process = new SimpleBirthDeathProcess();
 SimpleBirthDeathPotential potential = new SimpleBirthDeathPotential();
 TimeIntegratedPathSampler<Integer> sampler = new TimeIntegratedPathSampler<Integer>(potential, process);
 
-double t = 5;
-double estimate = sampler.estimateZ(1, 0, t);
-System.out.println(estimate);
+double t = 1;
+sampler.nParticles = 1000000;
+double estimate = sampler.estimateTransitionPr(1, 0, t);
+double exact = 0.25; // computed using FW Crawford and MA Suchard, 2012
+System.out.println("exact = " + exact);
+System.out.println("TIPS = " + estimate);
+Assert.assertEquals(0.25, estimate, 1e-3);
+System.out.println();
 ```
 
 Limitations
@@ -155,5 +181,81 @@ Limitations
 
 - The code currently does not support absorbing state, but this would be easy to fix.
 - The method works best when the number of transitions between the end points is not too large.
+- The code has not been optimized for speed. For example, the way rates are transmitted
+  to the sampler is very wasteful (creating a Counter at each query)
+- Computations are not done in log scale nor with scalings, so numerical under/over flow could 
+  occur when estimating small transition probabilities.
 
+
+How it works
+------------
+
+The core of this package is in TimeIntegratedPathSampler, which in turns 
+is based on two functions:
+
+
+First, runTIPS(), shown below, which is just an IS algorithm.
+
+The argument ``keepPath`` controls whether sampled paths should be kept or not.
+If true, then return a Counter over paths; if false, return 
+just the transition pr estimate (average of the weights).
+The latter is useful because it runs in constant memory.
+
+```java
+private java.lang.Object runTIPS(S,S,double,boolean)
+{
+    Counter<List<S>> result = keepPath ? new Counter<List<S>>() : null;
+    double sum = 0.0;
+
+    for (int particleIndex = 0; particleIndex < nParticles; particleIndex++)
+    {
+      // propose
+      Pair<List<S>, Double> proposed = proposal.propose(rand, x, y, t);
+
+      // compute weight
+      double weight = marginalizeSojournTimes(process, proposed.getLeft(), t);
+      List<S> proposedJumps = proposed.getLeft();
+      for (int jumpIndex = 0; jumpIndex < proposedJumps.size() - 1; jumpIndex++)
+        weight *= ProcessUtils.transitionProbability(process, proposedJumps.get(jumpIndex), proposedJumps.get(jumpIndex+1));
+
+      if (unnormalizedWeightsStatistics != null) 
+        unnormalizedWeightsStatistics.addValue(weight/proposed.getRight());
+
+      if (keepPath)
+        result.incrementCount(proposed.getLeft(), weight/proposed.getRight());
+      else
+        sum += weight/proposed.getRight();
+    }
+
+    return keepPath ? result : sum;
+}
+```
+<sub>From:[tips.TimeIntegratedPathSampler](src/main/java//tips/TimeIntegratedPathSampler.java)</sub>
+
+Second, marginalizeSojournTimes(), shown below, implementing Proposition 2 in
+the paper.
+
+The argument ``keepPath`` controls whether sampled paths should be kept or not.
+If true, then return a Counter over paths; if false, return 
+just the transition pr estimate (average of the weights).
+The latter is useful because it runs in constant memory.
+
+```java
+public static <S> double marginalizeSojournTimes(tips.Process,java.util.List,double)
+{
+    // build matrix
+    final int size = proposed.size() + 1;
+    double [][] mtx = new double[size][size];
+    for (int i = 0; i < proposed.size(); i++)
+    {
+      final double curRate = ProcessUtils.holdRate(process, proposed.get(i));
+      mtx[i][i] = -curRate * t;
+      mtx[i][i+1] = curRate * t;
+    }
+
+    // return entry 0, size-2 of the matrix exponential
+    return MatrixFunctions.expm(new DoubleMatrix(mtx)).get(0, size - 2);
+}
+```
+<sub>From:[tips.TimeIntegratedPathSampler](src/main/java//tips/TimeIntegratedPathSampler.java)</sub>
 

@@ -51,22 +51,6 @@ public class PIPLikelihoodUtils
       sum = NumericalUtils.logAdd(sum, logPrs[w] + cacheAtLeaf[w]);
     return sum;
   }
-  
-//  public static Map<SequenceId, SequenceId> extractChild(int i, Arbre<SequenceId> topology)
-//  {
-//    Map<SequenceId,SequenceId> result = new HashMap<SequenceId, SequenceId>();
-//    for (Arbre<SequenceId> node : topology.nodes())
-//    {
-//      List<Arbre<SequenceId>> children = node.getChildren();
-//      switch (children.size()) 
-//      {
-//        case 0 : break;
-//        case 2 : result.put(node.getContents(), children.get(i).getContents()); break;
-//        default: throw new RuntimeException();
-//      }
-//    }
-//    return result;
-//  }
 
   public static double totalTreeLength(Map<?,Double> bls)
   {
@@ -75,12 +59,4 @@ public class PIPLikelihoodUtils
       sum += value;
     return sum;
   }
-
-//  public static void fillPostOrder(List<SequenceId> postOrderTaxaTraversal,
-//      Arbre<SequenceId> topology)
-//  {
-//    for (Arbre<SequenceId> child : topology.getChildren())
-//      fillPostOrder(postOrderTaxaTraversal, child);
-//    postOrderTaxaTraversal.add(topology.getContents());
-//  }
 }

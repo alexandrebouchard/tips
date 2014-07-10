@@ -27,10 +27,10 @@ public class Doc
    * Summary
    * -------
    * 
-   * TIPS is an approximate method to compute continuous time Markov chain (CTMC) end-point
-   * probabilities. 
+   * TIPS is a method for approximate continuous time Markov chain (CTMC) end-point
+   * probability computation and path sampling. 
    * 
-   * Please cite the following paper:
+   * If you use this library in your work, please cite the following paper:
    * ``Monir Hajiaghayi, Bonnie Kirkpatrick, Liangliang Wang and Alexandre Bouchard-Côté. 
    * (2014) Efficient Continuous-Time Markov Chain Estimation. International Conference on 
    * Machine Learning (ICML).``
@@ -119,7 +119,7 @@ public class Doc
     pipMain.potentialProposalOptions.automatic = true;
       
     // sample
-    double estimate = is.estimateZ(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
+    double estimate = is.estimateTransitionPr(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
     System.out.println("TIPS = " + estimate);
     Assert.assertEquals(exact, estimate, 1e-6);
       
@@ -179,7 +179,7 @@ public class Doc
     
     double t = 1;
     sampler.nParticles = 1000000;
-    double estimate = sampler.estimateZ(1, 0, t);
+    double estimate = sampler.estimateTransitionPr(1, 0, t);
     double exact = 0.25; // computed using FW Crawford and MA Suchard, 2012
     System.out.println("exact = " + exact);
     System.out.println("TIPS = " + estimate);
@@ -195,7 +195,20 @@ public class Doc
    * - The method works best when the number of transitions between the end points is not too large.
    * - The code has not been optimized for speed. For example, the way rates are transmitted
    *   to the sampler is very wasteful (creating a Counter at each query)
+   * - Computations are not done in log scale nor with scalings, so numerical under/over flow could 
+   *   occur when estimating small transition probabilities.
    */
   @Tutorial(showSource = false)
   public void limitations() {}
+  
+  /**
+   * How it works
+   * ------------
+   * 
+   * The core of this package is in TimeIntegratedPathSampler, which in turns 
+   * is based on two functions:
+   */
+  @Tutorial(showSource = false, nextStep = TimeIntegratedPathSampler.class)
+  public void howItWorks1() {}
+
 }

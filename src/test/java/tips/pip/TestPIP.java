@@ -76,7 +76,7 @@ public class TestPIP
         SummaryStatistics mseStat = new SummaryStatistics();
         for (int testRepeat = 0; testRepeat < nTestRepeats ; testRepeat++)
         {
-          double estimate = is.estimateZ(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
+          double estimate = is.estimateTransitionPr(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
           mseStat.addValue(Math.pow((estimate - exact), 2));
         }
         double currentMSE = mseStat.getMean();

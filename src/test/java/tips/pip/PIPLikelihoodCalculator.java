@@ -45,7 +45,6 @@ public class PIPLikelihoodCalculator
     this.branchLengths = convert(branchLengths, topology, root);
     // derived fields
     this.postOrderTaxaTraversal = GraphUtils.postorder(topology, root); //new ArrayList<PIPTreeNode>();
-//    PIPLikelihoodUtils.fillPostOrder(postOrderTaxaTraversal, tree.topology());
     this.nMSAColumns = linearizedMSA.nColumns();
     this.mu = pip.deleteRate;
     this.logMu = Math.log(mu);
@@ -498,7 +497,4 @@ public class PIPLikelihoodCalculator
   {
     return number <= 0.000001;
   }
-  
-  
-
 }

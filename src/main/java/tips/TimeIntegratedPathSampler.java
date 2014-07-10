@@ -12,102 +12,152 @@ import org.jblas.MatrixFunctions;
 import tips.utils.PotPropOptions;
 import tips.utils.PotProposal;
 import tips.utils.ProcessUtils;
+import tutorialj.Tutorial;
 
 
 import briefj.collections.Counter;
  
 
 
-
+/**
+ * The main algorithm of this package: an IS algorithm for CTMCs where 
+ * sojourn time are analytically marginalized.
+ * 
+ * @author Alexandre Bouchard (alexandre.bouchard@gmail.com)
+ *
+ * @param <S>
+ */
 public class TimeIntegratedPathSampler<S>
 {
+  /**
+   * 
+   */
   public int nParticles = 1000;
-  public Proposal<S> proposal;
-  public Process<S> process;
+  
+  private final Proposal<S> proposal;
+  private final Process<S> process;
+  
+  /**
+   * Source of randomness used by the algorithm.
+   * 
+   * By default, the seed is fixed to 1.
+   */
   public Random rand = new Random(1);
   
+  /**
+   * Unnormalized weight statistics
+   * to the provided SummaryStatistics object so that diagnostic can be read off 
+   * from that object (in particular, to get weights variance).
+   * 
+   * Leave null if not needed.
+   */
+  public SummaryStatistics unnormalizedWeightsStatistics = null;
+  
+  /**
+   * Create a TIPS algorithm with a generic proposal mechanism.
+   * 
+   * @param proposal
+   * @param process
+   */
   public TimeIntegratedPathSampler(Proposal<S> proposal, Process<S> process)
   {
     this.proposal = proposal;
     this.process = process;
   }
   
+  /**
+   * Create a TIPS algorithm with a PotProposal, the provided potential, 
+   * and default value for PotProposal's options.
+   * 
+   * (Syntactic sugar).
+   * 
+   * @param potential
+   * @param process
+   */
   public TimeIntegratedPathSampler(Potential<S> potential, Process<S> process)
   {
     this.proposal = new PotProposal<S>(process, potential, new PotPropOptions());
     this.process = process;
   }
   
-  public Counter<List<S>> sample(S x, S y, double t)
+  /**
+   * Estimate end-point transition probability.
+   * 
+   * @param x start point
+   * @param y end point
+   * @param t time between the two end points
+   * @return Estimate for the end-point transition probability P(X_t = y|X_0 = x)
+   */
+  public double estimateTransitionPr(S x, S y, double t)
   {
-    return sample(x,y,t,null);
-  }
-
-  public Counter<List<S>> sample(S x, S y, double t, SummaryStatistics weightVariance)
-  {
-    return importanceSample(rand, nParticles, process, proposal, x, y, t,  weightVariance);
-  }
-  
-  public double estimateZ(S x, S y, double t, SummaryStatistics weightVariance)
-  {
-    double sum = (Double) importanceSample(rand, nParticles, process, proposal, x, y, t, weightVariance, false);
+    double sum = (Double) runTIPS(x, y, t, false);
     return sum/((double) nParticles);
   }
   
-  public double estimateZ(Counter<List<S>> samples)
+  /**
+   * Extract samples from X_{0:t} | X_0, X_t.
+   * 
+   * @param x start point
+   * @param y end point
+   * @param t time between the two end points
+   * @return An approximate unnormalized discrete measure built from the sampler. 
+   *   The keys are paths, and the values, unnormalized weights. Note that identical 
+   *   particles are grouped together by adding their weights.
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public Counter<List<S>> sampleEndPointConditionedPaths(S x, S y, double t)
   {
-    return samples.totalCount() / nParticles;
+    return (Counter) runTIPS(x, y, t, true);
   }
   
-  public double estimateZ(S x, S y, double t)
+  /**
+   * First, runTIPS(), shown below, which is just an IS algorithm.
+   * 
+   * The argument ``keepPath`` controls whether sampled paths should be kept or not.
+   * If true, then return a Counter over paths; if false, return 
+   * just the transition pr estimate (average of the weights).
+   * The latter is useful because it runs in constant memory.
+   */
+  @Tutorial(showSignature = true, showLink = true)
+  private Object runTIPS(S x, S y, double t, boolean keepPath)
   {
-    return estimateZ(x, y, t, null);
-  }
-  
-  public static <S> Counter<List<S>> importanceSample(
-      Random rand, int nParticles, Process<S> process, 
-      Proposal<S> proposal, S x, S y, double t)
-  {
-    return importanceSample(
-        rand,  nParticles,  process, 
-         proposal,  x,  y,  t, null);
-  }
-  
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  public static <S> Counter<List<S>> importanceSample(
-      Random rand, int nParticles, Process<S> process, 
-      Proposal<S> proposal, S x, S y, double t, SummaryStatistics weightVariance)
-  {
-    return (Counter) importanceSample(rand, nParticles, process, proposal, x, y, t, weightVariance, true);
-  }
-  
-  private static <S> Object importanceSample(
-      Random rand, int nParticles, Process<S> process, 
-      Proposal<S> proposal, S x, S y, double t, SummaryStatistics weightVariance, boolean keepSample)
-  {
-    Counter<List<S>> result = keepSample ? new Counter<List<S>>() : null;
+    Counter<List<S>> result = keepPath ? new Counter<List<S>>() : null;
     double sum = 0.0;
     
-    for (int pIdx = 0; pIdx < nParticles; pIdx++)
+    for (int particleIndex = 0; particleIndex < nParticles; particleIndex++)
     {
+      // propose
       Pair<List<S>, Double> proposed = proposal.propose(rand, x, y, t);
-      double integral = integral(process, proposed.getLeft(), t);
+      
+      // compute weight
+      double weight = marginalizeSojournTimes(process, proposed.getLeft(), t);
       List<S> proposedJumps = proposed.getLeft();
-      for (int jIdx = 0; jIdx < proposedJumps.size() - 1; jIdx++)
-        integral *= ProcessUtils.transitionProbability(process, proposedJumps.get(jIdx), proposedJumps.get(jIdx+1));
+      for (int jumpIndex = 0; jumpIndex < proposedJumps.size() - 1; jumpIndex++)
+        weight *= ProcessUtils.transitionProbability(process, proposedJumps.get(jumpIndex), proposedJumps.get(jumpIndex+1));
       
-      if (weightVariance != null) weightVariance.addValue(integral/proposed.getRight());
+      if (unnormalizedWeightsStatistics != null) 
+        unnormalizedWeightsStatistics.addValue(weight/proposed.getRight());
       
-      if (keepSample)
-        result.incrementCount(proposed.getLeft(), integral/proposed.getRight());
+      if (keepPath)
+        result.incrementCount(proposed.getLeft(), weight/proposed.getRight());
       else
-        sum += integral/proposed.getRight();
+        sum += weight/proposed.getRight();
     }
     
-    return keepSample ? result : sum;
+    return keepPath ? result : sum;
   }
   
-  public static <S> double integral(Process<S> process, List<S> proposed, double t)
+  /**
+   * Second, marginalizeSojournTimes(), shown below, implementing Proposition 2 in
+   * the paper.
+   * 
+   * The argument ``keepPath`` controls whether sampled paths should be kept or not.
+   * If true, then return a Counter over paths; if false, return 
+   * just the transition pr estimate (average of the weights).
+   * The latter is useful because it runs in constant memory.
+   */
+  @Tutorial(showSignature = true, showLink = true)
+  public static <S> double marginalizeSojournTimes(Process<S> process, List<S> proposed, double t)
   {
     // build matrix
     final int size = proposed.size() + 1;
@@ -119,6 +169,7 @@ public class TimeIntegratedPathSampler<S>
       mtx[i][i+1] = curRate * t;
     }
     
+    // return entry 0, size-2 of the matrix exponential
     return MatrixFunctions.expm(new DoubleMatrix(mtx)).get(0, size - 2);
   }
 

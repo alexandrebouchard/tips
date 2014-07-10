@@ -15,7 +15,6 @@ import tips.utils.PotPropOptions;
 import tips.utils.PotProposal;
 
 import briefj.BriefCollections;
-import briefj.collections.Counter;
 import briefj.opt.Option;
 import briefj.opt.OptionSet;
 import briefj.run.Mains;
@@ -58,8 +57,7 @@ public class PIPMain implements Runnable
     generateNextData();
     TimeIntegratedPathSampler<PIPString> sampler = buildImportanceSampler();
     sampler.nParticles = nParticles;
-    Counter<List<PIPString>> sample = sampler.sample(getStart(), getEnd(), bl);
-    System.out.println(sampler.estimateZ(sample));
+    System.out.println(sampler.estimateTransitionPr(getStart(), getEnd(), bl));
   }
   
   public TimeIntegratedPathSampler<PIPString> buildImportanceSampler()
