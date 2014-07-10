@@ -5,6 +5,7 @@ import java.util.Random;
 
 import muset.MSAPoset;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 
@@ -14,7 +15,6 @@ import tips.pip.PIPMain;
 import tips.pip.PIPString;
 import tips.pip.TestPIP;
 import tips.utils.Baselines;
-import tips.utils.PotProposal;
 import tutorialj.Tutorial;
 
 
@@ -30,7 +30,12 @@ public class Doc
    * TIPS is an approximate method to compute continuous time Markov chain (CTMC) end-point
    * probabilities. 
    * 
-   * See http://www.stat.ubc.ca/~bouchard/pub/icml2014.pdf
+   * Please cite the following paper:
+   * ``Monir Hajiaghayi, Bonnie Kirkpatrick, Liangliang Wang and Alexandre Bouchard-Côté. 
+   * (2014) Efficient Continuous-Time Markov Chain Estimation. International Conference on 
+   * Machine Learning (ICML).``
+   * 
+   * See: http://www.stat.ubc.ca/~bouchard/pub/icml2014.pdf
    * 
    * TIPS stands for Time Integrated Path Sampling.
    * 
@@ -91,6 +96,7 @@ public class Doc
   @Test
   public void pipExample()
   {
+    System.out.println("PIP example");
     PIPMain pipMain = new PIPMain();
     
     // set some process parameters
@@ -101,14 +107,10 @@ public class Doc
     
     // generate data
     MSAPoset align = pipMain.getGeneratedEndPoints();
-    System.out.println(align);
     
-    if (pipMain.ensureLinearizationUnique)
-    {
-      // compare to the exact transition probability
-      double exact = Math.exp(TestPIP.exact(pipMain.mu, pipMain.lambda, pipMain.bl, align));
-      System.out.println("exact = " + exact);
-    }
+    // compare to the exact transition probability
+    double exact = Math.exp(TestPIP.exact(pipMain.mu, pipMain.lambda, pipMain.bl, align));
+    System.out.println("exact = " + exact);
     
     // create a TIPS sampler
     TimeIntegratedPathSampler<PIPString> is = pipMain.buildImportanceSampler();
@@ -118,15 +120,17 @@ public class Doc
       
     // sample
     double estimate = is.estimateZ(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
-    System.out.println("TIPS estimate = " + estimate);
+    System.out.println("TIPS = " + estimate);
+    Assert.assertEquals(exact, estimate, 1e-6);
       
     // compare to some alternate methods
-    System.out.println("approximate exhaustive sum = " + 
+    System.out.println("approximateExhaustiveSum = " + 
         Baselines.exhaustiveSum(is.rand, is.nParticles, pipMain.getProcess(), pipMain.getProposal(), 
             pipMain.getStart(), pipMain.getEnd(), pipMain.bl));
-    System.out.println("naive IS = " + 
+    System.out.println("naiveIS = " + 
         Baselines.standardIS(pipMain.getGeneratedEndPoints(), pipMain.bl, pipMain.getProcess(), 
             is.nParticles, is.rand, null));
+    System.out.println();
   }
   
   /**
@@ -153,7 +157,7 @@ public class Doc
    * The second step is to create a potential that will guide
    * the proposed paths towards the end point.
    * 
-   * Here is a simple example:
+   * Again, here is a simple example:
    */
   @Tutorial(showSource = false, nextStep = SimpleBirthDeathPotential.class)
   public void extending2() {}
@@ -168,13 +172,19 @@ public class Doc
   @Test
   public void extending3() 
   {
+    System.out.println("BD example");
     SimpleBirthDeathProcess process = new SimpleBirthDeathProcess();
     SimpleBirthDeathPotential potential = new SimpleBirthDeathPotential();
     TimeIntegratedPathSampler<Integer> sampler = new TimeIntegratedPathSampler<Integer>(potential, process);
     
-    double t = 5;
+    double t = 1;
+    sampler.nParticles = 1000000;
     double estimate = sampler.estimateZ(1, 0, t);
-    System.out.println(estimate);
+    double exact = 0.25; // computed using FW Crawford and MA Suchard, 2012
+    System.out.println("exact = " + exact);
+    System.out.println("TIPS = " + estimate);
+    Assert.assertEquals(0.25, estimate, 1e-3);
+    System.out.println();
   }
   
   /**
@@ -183,6 +193,8 @@ public class Doc
    * 
    * - The code currently does not support absorbing state, but this would be easy to fix.
    * - The method works best when the number of transitions between the end points is not too large.
+   * - The code has not been optimized for speed. For example, the way rates are transmitted
+   *   to the sampler is very wasteful (creating a Counter at each query)
    */
   @Tutorial(showSource = false)
   public void limitations() {}
