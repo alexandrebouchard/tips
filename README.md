@@ -19,6 +19,11 @@ TIPS stands for Time Integrated Path Sampling.
 Installation
 ------------
 
+Prerequisite software:
+
+- Java SDK 1.6+
+- Gradle version 1.9+ (not tested on Gradle 2.0)
+
 There are several options available to install the package:
 
 ### Integrate to a gradle script
