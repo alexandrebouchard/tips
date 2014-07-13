@@ -150,11 +150,6 @@ public class TimeIntegratedPathSampler<S>
   /**
    * Second, marginalizeSojournTimes(), shown below, implementing Proposition 2 in
    * the paper.
-   * 
-   * The argument ``keepPath`` controls whether sampled paths should be kept or not.
-   * If true, then return a Counter over paths; if false, return 
-   * just the transition pr estimate (average of the weights).
-   * The latter is useful because it runs in constant memory.
    */
   @Tutorial(showSignature = true, showLink = true)
   public static <S> double marginalizeSojournTimes(Process<S> process, List<S> proposed, double t)
