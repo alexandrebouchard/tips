@@ -118,10 +118,10 @@ public class Doc
     System.out.println("exact = " + exact);
     
     // create a TIPS sampler
+    pipMain.potentialProposalOptions.automatic = true;
     TimeIntegratedPathSampler<PIPString> is = pipMain.buildImportanceSampler();
     is.nParticles = 10000;
     is.rand = new Random(1);
-    pipMain.potentialProposalOptions.automatic = true;
       
     // sample
     double estimate = is.estimateTransitionPr(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);

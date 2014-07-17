@@ -88,10 +88,10 @@ double exact = Math.exp(TestPIP.exact(pipMain.mu, pipMain.lambda, pipMain.bl, al
 System.out.println("exact = " + exact);
 
 // create a TIPS sampler
+pipMain.potentialProposalOptions.automatic = true;
 TimeIntegratedPathSampler<PIPString> is = pipMain.buildImportanceSampler();
 is.nParticles = 10000;
 is.rand = new Random(1);
-pipMain.potentialProposalOptions.automatic = true;
 
 // sample
 double estimate = is.estimateTransitionPr(pipMain.getStart(), pipMain.getEnd(), pipMain.bl);
@@ -203,8 +203,9 @@ First, runTIPS(), shown below, which is just an IS algorithm.
 
 The argument ``keepPath`` controls whether sampled paths should be kept or not.
 If true, then return a Counter over paths; if false, return 
-just the transition pr estimate (average of the weights).
-The latter is useful because it runs in constant memory.
+just the sum of the weights.
+The latter is useful because it runs in constant memory and still allows for
+computing the transition probability estimate.
 
 ```java
 private java.lang.Object runTIPS(S,S,double,boolean)
