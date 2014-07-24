@@ -211,7 +211,7 @@ public class Doc
    * ------------
    * 
    * The core of this package is in TimeIntegratedPathSampler, which in turns 
-   * is based on two functions:
+   * is based on three functions:
    */
   @Tutorial(showSource = false, nextStep = TimeIntegratedPathSampler.class)
   public void howItWorks1() {}

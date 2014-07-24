@@ -196,7 +196,7 @@ How it works
 ------------
 
 The core of this package is in TimeIntegratedPathSampler, which in turns 
-is based on two functions:
+is based on three functions:
 
 
 First, runTIPS(), shown below, which is just an IS algorithm.
@@ -216,21 +216,20 @@ private java.lang.Object runTIPS(S,S,double,boolean)
     for (int particleIndex = 0; particleIndex < nParticles; particleIndex++)
     {
       // propose
-      Pair<List<S>, Double> proposed = proposal.propose(rand, x, y, t);
+      Pair<List<S>, Double> proposed = proposal.propose(rand, x, y, time);
 
       // compute weight
-      double weight = marginalizeSojournTimes(process, proposed.getLeft(), t);
-      List<S> proposedJumps = proposed.getLeft();
-      for (int jumpIndex = 0; jumpIndex < proposedJumps.size() - 1; jumpIndex++)
-        weight *= ProcessUtils.transitionProbability(process, proposedJumps.get(jumpIndex), proposedJumps.get(jumpIndex+1));
+      final double computeUnormalizedTargetPr = computeUnnormalizedTargetPr(proposed.getLeft(), time);
 
       if (unnormalizedWeightsStatistics != null) 
-        unnormalizedWeightsStatistics.addValue(weight/proposed.getRight());
+        unnormalizedWeightsStatistics.addValue(computeUnormalizedTargetPr/proposed.getRight());
+
+      final double weight = computeUnormalizedTargetPr/proposed.getRight();
 
       if (keepPath)
-        result.incrementCount(proposed.getLeft(), weight/proposed.getRight());
+        result.incrementCount(proposed.getLeft(), weight);
       else
-        sum += weight/proposed.getRight();
+        sum += weight;
     }
 
     return keepPath ? result : sum;
@@ -238,7 +237,22 @@ private java.lang.Object runTIPS(S,S,double,boolean)
 ```
 <sub>From:[tips.TimeIntegratedPathSampler](src/main/java//tips/TimeIntegratedPathSampler.java)</sub>
 
-Second, marginalizeSojournTimes(), shown below, implementing Proposition 2 in
+Second, computeUnnormalizedTargetPr(), shown below, which compute the unnormalized target pr, 
+i.e. the pr of the jumps time the 
+integrated waiting times.
+
+```java
+private double computeUnnormalizedTargetPr(java.util.List,double)
+{
+    double weight = marginalizeSojournTimes(process, proposedJumps, time);
+    for (int jumpIndex = 0; jumpIndex < proposedJumps.size() - 1; jumpIndex++)
+      weight *= ProcessUtils.transitionProbability(process, proposedJumps.get(jumpIndex), proposedJumps.get(jumpIndex+1));
+    return weight;
+}
+```
+<sub>From:[tips.TimeIntegratedPathSampler](src/main/java//tips/TimeIntegratedPathSampler.java)</sub>
+
+And finally, marginalizeSojournTimes(), shown below, implementing Proposition 2 in
 the paper.
 
 ```java

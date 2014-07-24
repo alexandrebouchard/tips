@@ -1,5 +1,6 @@
 package tips;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -8,6 +9,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
+
+import com.google.common.collect.Lists;
 
 import tips.utils.PotPropOptions;
 import tips.utils.PotProposal;
@@ -80,6 +83,64 @@ public class TimeIntegratedPathSampler<S>
     this.process = process;
   }
   
+  public Pair<S,Double> sampleTreeCherry(S x, S y, double t1, double t2)
+  {
+    // sample a path between the two end points (start does not matter by reversibility)
+    Pair<List<S>, Double> proposed = proposal.propose(rand, x, y, t1 + t2);
+    final List<S> fullPath = proposed.getLeft();
+    
+    // sample a root 
+    final int rootIndex = rand.nextInt(fullPath.size());
+    
+    // build the two paths
+    List<S> list1 = Lists.newArrayList(fullPath.subList(0, rootIndex + 1)); Collections.reverse(list1);
+    List<S> list2 = fullPath.subList(rootIndex, fullPath.size());
+    
+    // weight computation
+    final S root = list2.get(0);
+    final double weight = 
+        (getStationaryPr(root) * computeUnnormalizedTargetPr(list1, t1) * computeUnnormalizedTargetPr(list2, t2))
+      / (proposed.getRight() * (1.0 / fullPath.size()) * getStationaryPr(x) * getStationaryPr(y));
+    
+    return Pair.of(root, weight);
+  }
+
+  private StationaryProcess<S> stationary = null;
+  private double getStationaryPr(S s)
+  {
+    if (stationary == null)
+      stationary = (StationaryProcess<S>) process;
+    return stationary.getStationaryProbability(s);
+  }
+
+//  public Pair<S,Double> sampleTreeCherry(S x, S y, double t1, double t2)
+//  {
+//    // sample a path between the two end points (start does not matter by reversibility)
+//    Pair<List<S>, Double> proposed = proposal.propose(rand, x, y, t1 + t2);
+//    final List<S> fullPath = proposed.getLeft();
+//    
+//    // sample a root 
+//    final List<S> reversed = Lists.newArrayList(fullPath); Collections.reverse(reversed);
+//    final double [] 
+//      forwardJumpPrs = jumpPrs(fullPath),
+//      backwardJumpPrs= jumpPrs(reversed);
+//    final double [] prs = new double[fullPath.size()];
+//    for (int i = 0; i < prs.length; i++)
+//    {
+//      
+//    }
+//    
+//    double weight = 
+//      proposed.getRight() +    // proposing the jump chain
+//      xxx; // proposing a rooting
+//  }
+//  
+//  private double[] jumpPrs(List<S> reversed)
+//  {
+//    double [] result = 
+//    return null;
+//  }
+
   /**
    * Estimate end-point transition probability.
    * 
@@ -110,6 +171,8 @@ public class TimeIntegratedPathSampler<S>
     return (Counter) runTIPS(x, y, t, true);
   }
   
+
+  
   /**
    * First, runTIPS(), shown below, which is just an IS algorithm.
    * 
@@ -120,7 +183,7 @@ public class TimeIntegratedPathSampler<S>
    * computing the transition probability estimate.
    */
   @Tutorial(showSignature = true, showLink = true)
-  private Object runTIPS(S x, S y, double t, boolean keepPath)
+  private Object runTIPS(S x, S y, double time, boolean keepPath)
   {
     Counter<List<S>> result = keepPath ? new Counter<List<S>>() : null;
     double sum = 0.0;
@@ -128,28 +191,41 @@ public class TimeIntegratedPathSampler<S>
     for (int particleIndex = 0; particleIndex < nParticles; particleIndex++)
     {
       // propose
-      Pair<List<S>, Double> proposed = proposal.propose(rand, x, y, t);
+      Pair<List<S>, Double> proposed = proposal.propose(rand, x, y, time);
       
       // compute weight
-      double weight = marginalizeSojournTimes(process, proposed.getLeft(), t);
-      List<S> proposedJumps = proposed.getLeft();
-      for (int jumpIndex = 0; jumpIndex < proposedJumps.size() - 1; jumpIndex++)
-        weight *= ProcessUtils.transitionProbability(process, proposedJumps.get(jumpIndex), proposedJumps.get(jumpIndex+1));
+      final double computeUnormalizedTargetPr = computeUnnormalizedTargetPr(proposed.getLeft(), time);
       
       if (unnormalizedWeightsStatistics != null) 
-        unnormalizedWeightsStatistics.addValue(weight/proposed.getRight());
+        unnormalizedWeightsStatistics.addValue(computeUnormalizedTargetPr/proposed.getRight());
+      
+      final double weight = computeUnormalizedTargetPr/proposed.getRight();
       
       if (keepPath)
-        result.incrementCount(proposed.getLeft(), weight/proposed.getRight());
+        result.incrementCount(proposed.getLeft(), weight);
       else
-        sum += weight/proposed.getRight();
+        sum += weight;
     }
     
     return keepPath ? result : sum;
   }
   
   /**
-   * Second, marginalizeSojournTimes(), shown below, implementing Proposition 2 in
+   * Second, computeUnnormalizedTargetPr(), shown below, which compute the unnormalized target pr, 
+   * i.e. the pr of the jumps time the 
+   * integrated waiting times.
+   */
+  @Tutorial(showSignature = true, showLink = true)
+  private double computeUnnormalizedTargetPr(List<S> proposedJumps, double time)
+  {
+    double weight = marginalizeSojournTimes(process, proposedJumps, time);
+    for (int jumpIndex = 0; jumpIndex < proposedJumps.size() - 1; jumpIndex++)
+      weight *= ProcessUtils.transitionProbability(process, proposedJumps.get(jumpIndex), proposedJumps.get(jumpIndex+1));
+    return weight;
+  }
+  
+  /**
+   * And finally, marginalizeSojournTimes(), shown below, implementing Proposition 2 in
    * the paper.
    */
   @Tutorial(showSignature = true, showLink = true)
