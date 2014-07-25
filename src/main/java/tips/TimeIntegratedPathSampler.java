@@ -83,26 +83,35 @@ public class TimeIntegratedPathSampler<S>
     this.process = process;
   }
   
-  public Pair<S,Double> sampleTreeCherry(S x, S y, double t1, double t2)
+
+  
+  public Counter<S> sampleTreeCherry(S x, S y, double t1, double t2)
   {
-    // sample a path between the two end points (start does not matter by reversibility)
-    Pair<List<S>, Double> proposed = proposal.propose(rand, x, y, t1 + t2);
-    final List<S> fullPath = proposed.getLeft();
+    Counter<S> result = new Counter<S>();
     
-    // sample a root 
-    final int rootIndex = rand.nextInt(fullPath.size());
+    for (int particleIndex = 0; particleIndex < nParticles; particleIndex++)
+    {
+      // sample a path between the two end points (start does not matter by reversibility)
+      Pair<List<S>, Double> proposed = proposal.propose(rand, x, y, t1 + t2);
+      final List<S> fullPath = proposed.getLeft();
+      
+      // sample a root 
+      final int rootIndex = rand.nextInt(fullPath.size());
+      
+      // build the two paths
+      List<S> list1 = Lists.newArrayList(fullPath.subList(0, rootIndex + 1)); Collections.reverse(list1);
+      List<S> list2 = fullPath.subList(rootIndex, fullPath.size());
+      
+      // weight computation
+      final S root = list2.get(0);
+      final double weight = 
+          (getStationaryPr(root) * computeUnnormalizedTargetPr(list1, t1) * computeUnnormalizedTargetPr(list2, t2))
+        / (proposed.getRight() * (1.0 / fullPath.size()));
+      
+      result.incrementCount(root, weight);
+    }
     
-    // build the two paths
-    List<S> list1 = Lists.newArrayList(fullPath.subList(0, rootIndex + 1)); Collections.reverse(list1);
-    List<S> list2 = fullPath.subList(rootIndex, fullPath.size());
-    
-    // weight computation
-    final S root = list2.get(0);
-    final double weight = 
-        (getStationaryPr(root) * computeUnnormalizedTargetPr(list1, t1) * computeUnnormalizedTargetPr(list2, t2))
-      / (proposed.getRight() * (1.0 / fullPath.size()));
-    
-    return Pair.of(root, weight);
+    return result;
   }
 
   private StationaryProcess<S> stationary = null;
