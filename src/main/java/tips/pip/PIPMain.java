@@ -181,4 +181,12 @@ public class PIPMain implements Runnable
   }
   
   public static SequenceId ta = new SequenceId("A"), tb = new SequenceId("B");
+
+
+  public MSAPoset getFullGeneratedPath()
+  {
+    if (ensureLinearizationUnique)
+      throw new RuntimeException(); // inconsistent with end point version in this case?
+    return fullGeneratedPath;
+  }
 }
