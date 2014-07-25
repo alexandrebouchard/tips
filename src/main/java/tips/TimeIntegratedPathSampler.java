@@ -100,7 +100,7 @@ public class TimeIntegratedPathSampler<S>
     final S root = list2.get(0);
     final double weight = 
         (getStationaryPr(root) * computeUnnormalizedTargetPr(list1, t1) * computeUnnormalizedTargetPr(list2, t2))
-      / (proposed.getRight() * (1.0 / fullPath.size()) * getStationaryPr(x) * getStationaryPr(y));
+      / (proposed.getRight() * (1.0 / fullPath.size()));
     
     return Pair.of(root, weight);
   }
