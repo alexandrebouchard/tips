@@ -12,7 +12,12 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 
 
-
+/**
+ * Check that the expected number of changes (inserts + deletes) in 
+ * a branch of length 1 is 2*lambda
+ * 
+ * @author Alexandre Bouchard (alexandre.bouchard@gmail.com)
+ */
 public class TestExpectedNChanges
 {
   public static void main(String [] args)
@@ -31,65 +36,30 @@ public class TestExpectedNChanges
     
     SummaryStatistics 
       nChangesStatistics = new SummaryStatistics(),
-      statioLength = new SummaryStatistics(),
-      nDelsStats = new SummaryStatistics(),
-      nInsStats = new SummaryStatistics(),
-      nGhostsStats = new SummaryStatistics();
+      statioLength = new SummaryStatistics();
     for (int i = 0; i < 100000; i++)
     {
       pipMain.generateNextData();
       
       MSAPoset fullGeneratedPath = pipMain.getFullGeneratedPath();
-//      System.out.println(fullGeneratedPath);
       int nChanges = nChanges(fullGeneratedPath);
       nChangesStatistics.addValue(nChanges);
       statioLength.addValue(pipMain.getGeneratedEndPoints().sequences().get(PIPMain.tb).length());
       
       int nDels = nDels(pipMain.getGeneratedEndPoints());
-      nDelsStats.addValue(nDels);
       
       int nIns = nIns(pipMain.getGeneratedEndPoints());
-      nInsStats.addValue(nIns);
       
       int nGhosts = 
         pipMain.getFullGeneratedPath().columns().size() - 
         pipMain.getGeneratedEndPoints().columns().size();
-      nGhostsStats.addValue(nGhosts);
       
       if (2*nGhosts + nIns + nDels != nChanges)
         throw new RuntimeException();
     }
     
     Assert.assertEquals(formula(pipMain.lambda, pipMain.mu), nChangesStatistics.getMean(), 0.01);
-    
-//    System.out.println("nChange stats");
-//    System.out.println(nChangesStatistics);
-//    System.out.println("Analytic: " + formula(pipMain.lambda, pipMain.mu));
-//    
-//    System.out.println("---");
-//    System.out.println("statioLen stats");
-//    System.out.println(statioLength);
-//    System.out.println("Analytic: " + (pipMain.lambda/pipMain.mu));
-//    
-//    System.out.println("---");
-//    System.out.println("nDels");
-//    System.out.println(nDelsStats);
-//    System.out.println("Analytic: " + ((pipMain.lambda/pipMain.mu) * (1.0 - Math.exp(-pipMain.mu))));
-//    
-//    System.out.println("---");
-//    System.out.println("nIns");
-//    System.out.println(nInsStats);
-//    System.out.println("Analytic: " + ((pipMain.lambda/pipMain.mu) * (1.0 - Math.exp(-pipMain.mu))));
-//    
-//    System.out.println("---");
-//    System.out.println("nGhosts");
-//    System.out.println(nGhostsStats);
-//    System.out.println("Analytic: " +  (pipMain.lambda * (1.0 - (1.0 - Math.exp(pipMain.mu))/pipMain.mu)));
-//    
-//    System.out.println("----");
-//    System.out.println("sanityCheck");
-//    System.out.println(nChangesStatistics.getMean());
-//    System.out.println(nInsStats.getMean() + nDelsStats.getMean() + 2.0 * nGhostsStats.getMean());
+    Assert.assertEquals(pipMain.lambda / pipMain.mu, statioLength.getMean(), 0.01);
   }
 
   private int nIns(MSAPoset generatedEndPoints)
