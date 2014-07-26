@@ -24,7 +24,7 @@ public class Doc
 {
   /**
    * 
-   * Summary
+   * Summary [![Build Status](https://travis-ci.org/alexandrebouchard/tips.png?branch=master)](https://travis-ci.org/alexandrebouchard/tips)
    * -------
    * 
    * TIPS is a method for approximate continuous time Markov chain (CTMC) end-point
