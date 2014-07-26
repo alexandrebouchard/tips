@@ -53,12 +53,12 @@ public class PotProposal<S> implements Proposal<S>
       stopPr = options.randPr(rand);
     }
 
-    List<S> proposed = propose(process, potential, pRand, x, y, options.specialSymbol, greed, stopPr);
+    List<S> proposed = propose(process, potential, pRand, x, y, greed, stopPr);
     
     return Pair.of(proposed, Math.exp(pRand.getLogProbability()));
   }
   
-  public static <S> List<S> propose(Process<S> process, Potential<S> pot, ProposalRandom pRand, S firstEndPoint, S lastEndPoint, Object specialSymbol, double greed, double stopPr)
+  public static <S> List<S> propose(Process<S> process, Potential<S> pot, ProposalRandom pRand, S firstEndPoint, S lastEndPoint, double greed, double stopPr)
   {
     List<S> result = new ArrayList<S>();
     
@@ -74,9 +74,9 @@ public class PotProposal<S> implements Proposal<S>
     {
       Counter<S> trPr = process.rates(current);
       trPr.normalize();
-      buildPotProposal(pot, trPr, current, lastEndPoint, pRand.rand, specialSymbol, greed, stopPr);
+      buildPotProposal(pot, trPr, current, lastEndPoint, pRand.rand, SPECIAL_SYMBOL, greed, stopPr);
       S next = pRand.sampleMultinomial(trPr);
-      if (next.equals(specialSymbol))
+      if (next.equals(SPECIAL_SYMBOL))
       {
         result.add(lastEndPoint);
         success = true;
@@ -94,7 +94,7 @@ public class PotProposal<S> implements Proposal<S>
     return result;
   }
   
-  public static final String SPECIAL_SYMBOL = "___TARGET___";
+  public static final Object SPECIAL_SYMBOL = new Object(); 
   private static final int MAX_PROPOSE_ATTEMPTS = 1000000;
 
   public static <S> void buildPotProposal(Potential<S> pot, Counter<S> transitionPrs, S current, S target, Random rand, Object specialSymbol, double greed, double stopPr)
