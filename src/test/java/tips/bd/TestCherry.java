@@ -31,7 +31,7 @@ public class TestCherry
     
     double num = 0.0, denom = 0.0;
     
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 2000; i++)
     {
       // sample from PIP    
       pipMain.generateNextData();
@@ -42,7 +42,7 @@ public class TestCherry
         y = pipMain.getGeneratedEndPoints().sequences().get(PIPMain.tb).length();
       
       // simulate end point problem
-      Counter<Integer> rootSamples = sampler.sampleTreeCherry(x, y, 1.0, 1.0);
+      Counter<Integer> rootSamples = sampler.sampleTreeCherries(x, y, 0.2, 0.5);
       rootSamples.normalize();
       denom++;
       for (Integer key : rootSamples.keySet())

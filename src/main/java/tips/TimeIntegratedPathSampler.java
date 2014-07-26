@@ -83,39 +83,54 @@ public class TimeIntegratedPathSampler<S>
     this.process = process;
   }
   
-
-  
-  public Counter<S> sampleTreeCherry(S x, S y, double t1, double t2)
+  /**
+   * 
+   * @param x
+   * @param y
+   * @param t1
+   * @param t2
+   * @param divideByLeafStationary Whether the weight should be divided by the 
+   *   stationary of the two leaves, useful at non-pre-terminal nodes when building
+   *   a tree incrementally.
+   * @return
+   */
+  public Counter<S> sampleTreeCherries(S x, S y, double t1, double t2)
   {
     Counter<S> result = new Counter<S>();
     
     for (int particleIndex = 0; particleIndex < nParticles; particleIndex++)
     {
-      // sample a path between the two end points (start does not matter by reversibility)
-      Pair<List<S>, Double> proposed = proposal.propose(rand, x, y, t1 + t2);
-      final List<S> fullPath = proposed.getLeft();
-      
-      // sample a root 
-      final int rootIndex = rand.nextInt(fullPath.size());
-      
-      // build the two paths
-      List<S> list1 = Lists.newArrayList(fullPath.subList(0, rootIndex + 1)); Collections.reverse(list1);
-      List<S> list2 = fullPath.subList(rootIndex, fullPath.size());
-      
-      // weight computation
-      final S root = list2.get(0);
-      final double weight = 
-          (getStationaryPr(root) * computeUnnormalizedTargetPr(list1, t1) * computeUnnormalizedTargetPr(list2, t2))
-        / (proposed.getRight() * (1.0 / fullPath.size()));
-      
-      result.incrementCount(root, weight);
+      Pair<S, Double> sampleTreeCherry = sampleTreeCherry(x, y, t1, t2);
+      result.incrementCount(sampleTreeCherry.getLeft(), sampleTreeCherry.getRight());
     }
     
     return result;
   }
+  
+  public Pair<S,Double> sampleTreeCherry(S x, S y, double t1, double t2)
+  {
+    // sample a path between the two end points (start does not matter by reversibility)
+    Pair<List<S>, Double> proposed = proposal.propose(rand, x, y, t1 + t2);
+    final List<S> fullPath = proposed.getLeft();
+    
+    // sample a root 
+    final int rootIndex = rand.nextInt(fullPath.size());
+    
+    // build the two paths
+    List<S> list1 = Lists.newArrayList(fullPath.subList(0, rootIndex + 1)); Collections.reverse(list1);
+    List<S> list2 = fullPath.subList(rootIndex, fullPath.size());
+    
+    // weight computation
+    final S root = list2.get(0);
+    final double weight = 
+        (getStationaryPr(root) * computeUnnormalizedTargetPr(list1, t1) * computeUnnormalizedTargetPr(list2, t2))
+      / (proposed.getRight() * (1.0 / fullPath.size()));
+    
+    return Pair.of(root, weight);
+  }
 
   private StationaryProcess<S> stationary = null;
-  private double getStationaryPr(S s)
+  public double getStationaryPr(S s)
   {
     if (stationary == null)
       stationary = (StationaryProcess<S>) process;
