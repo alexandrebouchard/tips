@@ -7,7 +7,7 @@ TIPS is a method for approximate continuous time Markov chain (CTMC) end-point
 probability computation and path sampling. 
 
 If you use this library in your work, please cite the following paper:
-``Monir Hajiaghayi, Bonnie Kirkpatrick, Liangliang Wang and Alexandre Bouchard-Côté. 
+``Monir Hajiaghayi, Bonnie Kirkpatrick, Liangliang Wang and Alexandre Bouchard. 
 (2014) Efficient Continuous-Time Markov Chain Estimation. International Conference on 
 Machine Learning (ICML).``
 
