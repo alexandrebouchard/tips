@@ -20,7 +20,7 @@ import briefj.collections.Counter;
 
 /**
  * Implements Equation (2) in Monir Hajiaghayi, 
- * Bonnie Kirkpatrick, Liangliang Wang and Alexandre Bouchard-Côté. 
+ * Bonnie Kirkpatrick, Liangliang Wang and Alexandre Bouchard. 
  * (2014) Efficient Continuous-Time Markov Chain Estimation.
  * 
  * @author Alexandre Bouchard (alexandre.bouchard@gmail.com)
