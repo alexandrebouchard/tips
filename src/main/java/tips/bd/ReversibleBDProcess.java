@@ -1,5 +1,7 @@
 package tips.bd;
 
+import java.util.Random;
+
 import bayonet.math.SpecialFunctions;
 import briefj.collections.Counter;
 import tips.StationaryProcess;
@@ -26,6 +28,12 @@ public class ReversibleBDProcess implements StationaryProcess<Integer>
     this.lambda = lambda;
     this.mu = mu;
   }
+  
+  public static ReversibleBDProcess normalizedIntensityWithExpectedLength(double expectedLen)
+  {
+    final double intensity = 1.0;
+    return new ReversibleBDProcess(intensity/2.0, intensity/2.0/expectedLen);
+  }
 
   @Override
   public Counter<Integer> rates(Integer point)
@@ -43,6 +51,23 @@ public class ReversibleBDProcess implements StationaryProcess<Integer>
     final double rate = lambda / mu;
     return Math.exp(-rate + state * Math.log(rate) - SpecialFunctions.logFactorial(state));
   }
+  
+  @Override
+  public Integer sampleFromStationary(Random rand)
+  {
+    double uniformDraw = rand.nextDouble();
+    
+    double massSoFar = 0.0;
+    for (int i = 0; i < MAX_STATIONARY_DRAW; i++)
+    {
+      massSoFar += getStationaryProbability(i);
+      if (massSoFar >= uniformDraw)
+        return i;
+    }
+    
+    throw new RuntimeException();
+  }
+  private double MAX_STATIONARY_DRAW = 100000;
 
   /**
    * Required by TipsTreeLikelihood
@@ -80,7 +105,5 @@ public class ReversibleBDProcess implements StationaryProcess<Integer>
       return false;
     return true;
   }
-  
-  
 
 }

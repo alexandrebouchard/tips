@@ -1,5 +1,7 @@
 package tips.finite;
 
+import java.util.Random;
+
 import briefj.collections.Counter;
 import tips.Process;
 import tips.StationaryProcess;
@@ -38,5 +40,11 @@ public class FiniteProcess implements StationaryProcess<Integer>
   public double getStationaryProbability(Integer state)
   {
     return 0.5;
+  }
+
+  @Override
+  public Integer sampleFromStationary(Random rand)
+  {
+    return rand.nextInt(2);
   }
 }
