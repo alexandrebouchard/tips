@@ -51,6 +51,15 @@ public class ReversibleBDProcess<P extends ReversibleBDProcess.Parameterization>
     {
       return intensity/2.0;
     }
+
+    @Override
+    public String toString()
+    {
+      return "ExpectedLengthParameterization(expectedLength=" + expectedLength
+          + ")";
+    }
+    
+    
   }
   
   public static class FullParameterization implements ReversibleBDProcess.Parameterization
@@ -77,6 +86,12 @@ public class ReversibleBDProcess<P extends ReversibleBDProcess.Parameterization>
     public double getLambda()
     {
       return lambda.getValue();
+    }
+
+    @Override
+    public String toString()
+    {
+      return "FullParameterization(mu=" + mu + ", lambda=" + lambda + ")";
     }
   }
 
@@ -155,6 +170,12 @@ public class ReversibleBDProcess<P extends ReversibleBDProcess.Parameterization>
     throw new RuntimeException();
   }
   private double MAX_STATIONARY_DRAW = 100000;
+  
+  @Override
+  public String toString()
+  {
+    return "ReversibleBDProcess(" + parameters + ")";
+  }
 
   /**
    * Required by TipsTreeLikelihood

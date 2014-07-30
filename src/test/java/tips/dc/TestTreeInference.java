@@ -9,6 +9,9 @@ import tips.bd.ReversibleBDProcess;
 import tips.bd.SimpleBirthDeathPotential;
 import bayonet.distributions.Exponential;
 import bayonet.distributions.Exponential.RateParameterization;
+import bayonet.distributions.Gamma.RateShapeParameterization;
+import bayonet.distributions.Gamma;
+import bayonet.distributions.Gamma.ScaleShapeParameterization;
 import blang.ForwardSampler;
 import blang.MCMCAlgorithm;
 import blang.MCMCFactory;
@@ -41,7 +44,7 @@ public class TestTreeInference implements Processor
       NonClockTreePrior.on(approximateLikelihood.tree).withExponentialRate(0.5);
     
     @DefineFactor
-    public final Exponential<RateParameterization> processParameterPrior = Exponential.on(process.parameters.expectedLength);
+    public final Gamma<ScaleShapeParameterization> processParameterPrior = Gamma.on(process.parameters.expectedLength).withScaleShape(0.5, 20);
   }
   
   @Test
@@ -51,8 +54,13 @@ public class TestTreeInference implements Processor
     
     // forward sample
     Random generationRandom = new Random(1);
-    ForwardSampler forwardSampler = new ForwardSampler(new ProbabilityModel(modelSpec));
+    ProbabilityModel generatingModel = new ProbabilityModel(modelSpec);
+    ForwardSampler forwardSampler = new ForwardSampler(generatingModel);
     forwardSampler.simulate(generationRandom);
+    
+    // set param to some wrong value
+    System.out.println("True parameters: " + modelSpec.process.parameters);
+    modelSpec.process.parameters.expectedLength.setValue(1.0);
     
     modelSpec.approximateLikelihood.enableTestMode();
     modelSpec.approximateLikelihood.setNParticles(100);
@@ -68,6 +76,6 @@ public class TestTreeInference implements Processor
   @Override
   public void process(ProcessorContext context)
   {
-    System.out.println(modelSpec.treePrior.tree);
+    System.out.println(modelSpec.process);
   }
 }
