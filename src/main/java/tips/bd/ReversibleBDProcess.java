@@ -3,6 +3,9 @@ package tips.bd;
 import java.util.Random;
 
 import bayonet.math.SpecialFunctions;
+import blang.annotations.FactorArgument;
+import blang.annotations.FactorComponent;
+import blang.variables.RealVariable;
 import briefj.collections.Counter;
 import tips.StationaryProcess;
 
@@ -14,41 +17,125 @@ import tips.StationaryProcess;
  * @author Alexandre Bouchard (alexandre.bouchard@gmail.com)
  *
  */
-public class ReversibleBDProcess implements StationaryProcess<Integer>
+public class ReversibleBDProcess<P extends ReversibleBDProcess.Parameterization> implements StationaryProcess<Integer>
 {
-  private final double lambda, mu;
+  @FactorComponent
+  public final P parameters;
+  
+  public static interface Parameterization
+  {
+    public double getMu();
+    public double getLambda();
+  }
+  
+  public static class ExpectedLengthParameterization implements ReversibleBDProcess.Parameterization
+  {
+    @FactorArgument
+    public final RealVariable expectedLength;
+    
+    private static final double intensity = 1.0;
+
+    private ExpectedLengthParameterization(double expectedLength)
+    {
+      this.expectedLength = new RealVariable(expectedLength);
+    }
+
+    @Override
+    public double getMu()
+    {
+      return intensity/2.0/expectedLength.getValue();
+    }
+
+    @Override
+    public double getLambda()
+    {
+      return intensity/2.0;
+    }
+  }
+  
+  public static class FullParameterization implements ReversibleBDProcess.Parameterization
+  {
+    @FactorArgument
+    public final RealVariable mu;
+
+    @FactorArgument
+    public final RealVariable lambda;
+    
+    private FullParameterization(double mu, double lambda)
+    {
+      this.mu = new RealVariable(mu);
+      this.lambda = new RealVariable(lambda);
+    }
+
+    @Override
+    public double getMu()
+    {
+      return mu.getValue();
+    }
+
+    @Override
+    public double getLambda()
+    {
+      return lambda.getValue();
+    }
+  }
 
   /**
    * 
    * @param lambda Insertion rate.
    * @param mu Deletion rate.
    */
-  public ReversibleBDProcess(double lambda, double mu)
+  public ReversibleBDProcess(P parameters)
   {
-    this.lambda = lambda;
-    this.mu = mu;
+    this.parameters = parameters;
   }
   
-  public static ReversibleBDProcess normalizedIntensityWithExpectedLength(double expectedLen)
+  public static ReversibleBDProcess<ExpectedLengthParameterization> normalizedIntensityWithExpectedLength(double expectedLen)
   {
-    final double intensity = 1.0;
-    return new ReversibleBDProcess(intensity/2.0, intensity/2.0/expectedLen);
+    return new ReversibleBDProcess<ExpectedLengthParameterization>(new ExpectedLengthParameterization(expectedLen));
+  }
+  
+  public static ReversibleBDProcess<FullParameterization> muLambdaParameterized(double mu, double lambda)
+  {
+    return new ReversibleBDProcess<FullParameterization>(new FullParameterization(mu, lambda));
+  }
+  
+  private double lambda()
+  {
+    return parameters.getLambda();
+  }
+  
+  private double mu()
+  {
+    return parameters.getMu();
+  }
+  
+  public static class InvalidParametersException extends RuntimeException
+  {
+    private static final long serialVersionUID = 1L;
+
+    public InvalidParametersException(Object bad)
+    {
+      super("Invalid parameter: " + bad);
+    }
   }
 
   @Override
   public Counter<Integer> rates(Integer point)
   {
+    if (mu() < 0 || lambda() < 0)
+      throw new InvalidParametersException(parameters);
     Counter<Integer> result = new Counter<Integer>();
-    result.setCount(point + 1, lambda);
+    result.setCount(point + 1, lambda());
     if (point > 0)
-      result.setCount(point - 1, mu * point);
+      result.setCount(point - 1, mu() * point);
     return result;
   }
 
   @Override
   public double getStationaryProbability(Integer state)
   {
-    final double rate = lambda / mu;
+    final double rate = lambda() / mu();
     return Math.exp(-rate + state * Math.log(rate) - SpecialFunctions.logFactorial(state));
   }
   
@@ -78,9 +165,9 @@ public class ReversibleBDProcess implements StationaryProcess<Integer>
     final int prime = 31;
     int result = 1;
     long temp;
-    temp = Double.doubleToLongBits(lambda);
+    temp = Double.doubleToLongBits(lambda());
     result = prime * result + (int) (temp ^ (temp >>> 32));
-    temp = Double.doubleToLongBits(mu);
+    temp = Double.doubleToLongBits(mu());
     result = prime * result + (int) (temp ^ (temp >>> 32));
     return result;
   }
@@ -98,10 +185,10 @@ public class ReversibleBDProcess implements StationaryProcess<Integer>
     if (getClass() != obj.getClass())
       return false;
     ReversibleBDProcess other = (ReversibleBDProcess) obj;
-    if (Double.doubleToLongBits(lambda) != Double
-        .doubleToLongBits(other.lambda))
+    if (Double.doubleToLongBits(lambda()) != Double
+        .doubleToLongBits(other.lambda()))
       return false;
-    if (Double.doubleToLongBits(mu) != Double.doubleToLongBits(other.mu))
+    if (Double.doubleToLongBits(mu()) != Double.doubleToLongBits(other.mu()))
       return false;
     return true;
   }

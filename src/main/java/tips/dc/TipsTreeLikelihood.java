@@ -16,9 +16,11 @@ import tips.Potential;
 import tips.Proposal;
 import tips.StationaryProcess;
 import tips.TimeIntegratedPathSampler;
+import tips.bd.ReversibleBDProcess.InvalidParametersException;
 import tips.utils.PotPropOptions;
 import tips.utils.PotProposal;
 import bayonet.distributions.Multinomial;
+import bayonet.math.NumericalUtils;
 import blang.annotations.FactorArgument;
 import blang.annotations.FactorComponent;
 import blang.factors.GenerativeFactor;
@@ -62,10 +64,22 @@ public class TipsTreeLikelihood<S> implements GenerativeFactor
   @FactorArgument(makeStochastic = true)
   public final TipsTreeObservation<S> observations;
   
-//  public final TimeIntegratedPathSampler<S> sampler;
-  
+  /**
+   * 
+   */
   private int nParticles = 1000;
+  
+  /**
+   * 
+   */
   private final Proposal<S> proposal;
+  
+  /**
+   * Source of randomness used by the algorithm.
+   * 
+   * By default, the seed is fixed to 1.
+   */
+  public Random rand = new Random(1);
   
   public void setNParticles(int nParticles)
   {
@@ -79,13 +93,6 @@ public class TipsTreeLikelihood<S> implements GenerativeFactor
     result.rand = rand;
     return result;
   }
-  
-  /**
-   * Source of randomness used by the algorithm.
-   * 
-   * By default, the seed is fixed to 1.
-   */
-  public Random rand = new Random(1);
   
   public TipsTreeLikelihood(UnrootedTree tree, StationaryProcess<S> evolutionaryProcess,
       TipsTreeObservation<S> observations, Proposal<S> proposal)
@@ -135,7 +142,7 @@ public class TipsTreeLikelihood<S> implements GenerativeFactor
     private CachedDensity(TipsTreeLikelihood<S> currentConfig, double logDensity)
     {
       this.value = logDensity;
-      this.tree = currentConfig.tree;
+      this.tree = new UnrootedTree(currentConfig.tree);
       this.processHash = currentConfig.evolutionaryProcess.hashCode();
       this.observationsHash = currentConfig.observations.hashCode();
     }
@@ -152,32 +159,68 @@ public class TipsTreeLikelihood<S> implements GenerativeFactor
     }
   }
   private CachedDensity cached = null;
+  
+  private boolean testMode = false;
+  
+  void enableTestMode() 
+  {
+    testMode = true; 
+  }
 
   @Override
   public double logDensity()
   {
+    if (testMode)
+      return testLogDensity();
     if (cached == null || !cached.valid())
-      refreshCache();
+      cached = recomputeCache();
     return cached.value;
   }
 
+  private double testLogDensity()
+  {
+    this.rand = new Random(1);
+    CachedDensity before = cached;
+    CachedDensity after = recomputeCache();
+    if (cached == null)
+      cached = after;
+    else
+    {
+      if (cached.valid())
+        NumericalUtils.checkIsClose(before.value, after.value);
+      else
+      {
+        if (NumericalUtils.isClose(before.value, after.value, NumericalUtils.THRESHOLD))
+          throw new RuntimeException();
+        cached = after;
+      }
+    }
+    return cached.value;
+  }
 
-  private void refreshCache()
+  private CachedDensity recomputeCache()
   {
     double logDensity = recomputeLogDensity(); //recomputeLogDensity_dcSMC();
-    cached = new CachedDensity(this, logDensity);
+    return new CachedDensity(this, logDensity);
   }
   
   public double recomputeLogDensity()
   {
-         if (likelihoodCalculationMethod == LikelihoodCalculationMethod.DC)
-      return recomputeLogDensity_dcSMC();
-    else if (likelihoodCalculationMethod == LikelihoodCalculationMethod.SMC_BOTTOM_UP)
-      return recomputeLogDensity_standardSMC(true);
-    else if (likelihoodCalculationMethod == LikelihoodCalculationMethod.SMC_DFS)
-      return recomputeLogDensity_standardSMC(false);
-    else
-      throw new RuntimeException();
+    try 
+    {
+           if (likelihoodCalculationMethod == LikelihoodCalculationMethod.DC)
+        return recomputeLogDensity_dcSMC();
+      else if (likelihoodCalculationMethod == LikelihoodCalculationMethod.SMC_BOTTOM_UP)
+        return recomputeLogDensity_standardSMC(true);
+      else if (likelihoodCalculationMethod == LikelihoodCalculationMethod.SMC_DFS)
+        return recomputeLogDensity_standardSMC(false);
+      else
+        throw new RuntimeException();
+    }
+    catch (InvalidParametersException e)
+    {
+      return Double.NEGATIVE_INFINITY;
+    }
   }
 
   public static enum LikelihoodCalculationMethod { DC, SMC_BOTTOM_UP, SMC_DFS }
@@ -223,7 +266,6 @@ public class TipsTreeLikelihood<S> implements GenerativeFactor
     return result;
   }
 
-
   private List<Map<TreeNode, S>> initStandardSMCSamples(int site, Tree<Pair<TreeNode, Double>> topology)
   {
     Map<TreeNode,S> initialParticle = Maps.newLinkedHashMap();
@@ -243,7 +285,6 @@ public class TipsTreeLikelihood<S> implements GenerativeFactor
   private double standardSMCLogNorm = Double.NaN;
   private void standardSMC(int siteIndex, Tree<Pair<TreeNode, Double>> root, boolean useBottomUpTraversal)
   {
-    
     List<Tree<Pair<TreeNode, Double>>> traversalOrder = useBottomUpTraversal ? bottomUpTraversal(root) : root.getPostOrderTraversal();
     nodeLoop : for (Tree<Pair<TreeNode, Double>> node : traversalOrder)
     {

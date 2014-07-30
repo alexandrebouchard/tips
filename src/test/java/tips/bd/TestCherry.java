@@ -27,7 +27,7 @@ public class TestCherry
     pipMain.mu = 0.5;
     pipMain.bl =  1;
     
-    TimeIntegratedPathSampler<Integer> sampler = new TimeIntegratedPathSampler<Integer>(new SimpleBirthDeathPotential(), new ReversibleBDProcess(pipMain.lambda, pipMain.mu));
+    TimeIntegratedPathSampler<Integer> sampler = new TimeIntegratedPathSampler<Integer>(new SimpleBirthDeathPotential(), ReversibleBDProcess.muLambdaParameterized(pipMain.mu, pipMain.lambda));
     
     double num = 0.0, denom = 0.0;
     

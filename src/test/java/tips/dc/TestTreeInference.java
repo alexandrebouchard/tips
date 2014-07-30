@@ -1,0 +1,73 @@
+package tips.dc;
+
+import java.util.Random;
+
+import org.junit.Test;
+
+import tips.Potential;
+import tips.bd.ReversibleBDProcess;
+import tips.bd.SimpleBirthDeathPotential;
+import bayonet.distributions.Exponential;
+import bayonet.distributions.Exponential.RateParameterization;
+import blang.ForwardSampler;
+import blang.MCMCAlgorithm;
+import blang.MCMCFactory;
+import blang.ProbabilityModel;
+import blang.annotations.DefineFactor;
+import blang.processing.Processor;
+import blang.processing.ProcessorContext;
+import conifer.TopologyUtils;
+import conifer.factors.NonClockTreePrior;
+
+
+
+public class TestTreeInference implements Processor
+{
+
+  private final int nTaxa = 5;
+  private Model modelSpec;
+  
+  public class Model
+  {
+    private final ReversibleBDProcess<ReversibleBDProcess.ExpectedLengthParameterization> process = ReversibleBDProcess.normalizedIntensityWithExpectedLength(10.0);
+    private final Potential<Integer> potential = new SimpleBirthDeathPotential();
+    
+    @DefineFactor(onObservations = true)
+    public final TipsTreeLikelihood<Integer> approximateLikelihood = new TipsTreeLikelihood<Integer>(1, TopologyUtils.syntheticTaxaList(nTaxa))
+      .withEvolutionaryProcess(process, potential);
+    
+    @DefineFactor
+    public final NonClockTreePrior<RateParameterization> treePrior = 
+      NonClockTreePrior.on(approximateLikelihood.tree).withExponentialRate(0.5);
+    
+    @DefineFactor
+    public final Exponential<RateParameterization> processParameterPrior = Exponential.on(process.parameters.expectedLength);
+  }
+  
+  @Test
+  public void testCaching()
+  {
+    modelSpec = new Model();
+    
+    // forward sample
+    Random generationRandom = new Random(1);
+    ForwardSampler forwardSampler = new ForwardSampler(new ProbabilityModel(modelSpec));
+    forwardSampler.simulate(generationRandom);
+    
+    modelSpec.approximateLikelihood.enableTestMode();
+    modelSpec.approximateLikelihood.setNParticles(100);
+    MCMCFactory mcmcFactory = new MCMCFactory();
+    mcmcFactory.mcmcOptions.thinningPeriod = 1;
+    mcmcFactory.addProcessor(this);
+    mcmcFactory.mcmcOptions.nMCMCSweeps = 100;
+    MCMCAlgorithm mcmc = mcmcFactory.build(modelSpec, false);
+    System.out.println(mcmc.model);
+    mcmc.run();
+  }
+
+  @Override
+  public void process(ProcessorContext context)
+  {
+    System.out.println(modelSpec.treePrior.tree);
+  }
+}

@@ -98,12 +98,12 @@ public class TestTipsLikelihood
     new TestTipsLikelihood().testBD();
   }
   
-  public static class Model
+  private final StationaryProcess<Integer> process = ReversibleBDProcess.normalizedIntensityWithExpectedLength(10.0);
+  private final Potential<Integer> potential = new SimpleBirthDeathPotential();
+  private final int nTaxa = 5;
+  
+  public class Model
   {
-    private final StationaryProcess<Integer> process = ReversibleBDProcess.normalizedIntensityWithExpectedLength(10.0);
-    private final Potential<Integer> potential = new SimpleBirthDeathPotential();
-    private final int nTaxa = 5;
-    
     @DefineFactor(onObservations = true)
     public final TipsTreeLikelihood<Integer> approximateLikelihood = new TipsTreeLikelihood<Integer>(1, TopologyUtils.syntheticTaxaList(nTaxa))
       .withEvolutionaryProcess(process, potential);
