@@ -13,7 +13,6 @@ import com.google.common.collect.Maps;
 
 import tips.ForwardSampler;
 import tips.Potential;
-import tips.Process;
 import tips.Proposal;
 import tips.StationaryProcess;
 import tips.TimeIntegratedPathSampler;
@@ -193,7 +192,6 @@ public class TipsTreeLikelihood<S> implements GenerativeFactor
     for (int site = 0; site < observations.nSites(); site++)
     {
       TreeNodeSample<S> rootPopulation = divideAndConquer(site, topologicalCentroidRooting);
-//      System.out.println(rootPopulation);
       result += rootPopulation.logNormalization;
     }
     
@@ -213,14 +211,6 @@ public class TipsTreeLikelihood<S> implements GenerativeFactor
       standardSMCLogNorm = 0.0;
       standardSMC(site, topologicalCentroidRooting, useBottomUpTraversal);
       result += standardSMCLogNorm;
-      
-//      {
-//        Counter<S> rootSamples = new Counter<S>();
-//        TreeNode root = topologicalCentroidRooting.getLabel().getLeft();
-//        for (int i = 0; i < nParticles; i++)
-//          rootSamples.incrementCount(standardSMCSamples.get(i).get(root), standardSMCPrs[i]);
-//        System.out.println(rootSamples);
-//      }
     }
     
     return result;
@@ -253,22 +243,10 @@ public class TipsTreeLikelihood<S> implements GenerativeFactor
   private double standardSMCLogNorm = Double.NaN;
   private void standardSMC(int siteIndex, Tree<Pair<TreeNode, Double>> root, boolean useBottomUpTraversal)
   {
-    // if leaf, do nothing (already accounted by init)
-//    if (node.isLeaf())
-//      return;
-//    
-//    if (node.getChildren().size() != 2)
-//      throw new RuntimeException("Only bifurcating trees supported (arity=" + node.getChildren().size() + ")");
     
     List<Tree<Pair<TreeNode, Double>>> traversalOrder = useBottomUpTraversal ? bottomUpTraversal(root) : root.getPostOrderTraversal();
-//    System.out.println("ndesc = " + root.getLeaves().size());
-//    System.out.println("trordersize = " + traversalOrder.size());
     nodeLoop : for (Tree<Pair<TreeNode, Double>> node : traversalOrder)
     {
-//    List<Tree<Pair<TreeNode, Double>>> children = Lists.newArrayList(node.getChildren());
-//    Collections.shuffle(children, rand);
-//    for (Tree<Pair<TreeNode, Double>> child : children)
-//      standardSMC(siteIndex, child);
       if (node.isLeaf())
         continue nodeLoop;
 

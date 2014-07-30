@@ -113,8 +113,6 @@ public class TestTipsLikelihood
       NonClockTreePrior.on(approximateLikelihood.tree).withExponentialRate(0.5);
   }
   
-  
-  
   /**
    * Use a finite rate matrix case where the true normalization is known.
    * 
@@ -131,7 +129,6 @@ public class TestTipsLikelihood
     ForwardSampler forwardSampler = new ForwardSampler(prModel);
     forwardSampler.simulate(genRandom);
     
-//    model.approximateLikelihood.generate(genRandom);
     System.out.println(model.treePrior.tree);
     System.out.println(model.approximateLikelihood.observations);
     
@@ -154,9 +151,6 @@ public class TestTipsLikelihood
         {
           model.approximateLikelihood.setNParticles(nParticles);
           final double approx = model.approximateLikelihood.recomputeLogDensity();
-//            useDC ? 
-//              model.approximateLikelihood.recomputeLogDensity_dcSMC() :
-//              model.approximateLikelihood.recomputeLogDensity_standardSMC(true);
           approximateLogLikelihood.addValue(approx);
         }
         System.out.println("Approximate pr: " + approximateLogLikelihood.getMean());
