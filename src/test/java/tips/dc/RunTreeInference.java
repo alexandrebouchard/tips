@@ -23,10 +23,10 @@ import conifer.factors.NonClockTreePrior;
 
 
 
-public class TestTreeInference implements Processor
+public class RunTreeInference implements Processor, Runnable
 {
 
-  private final int nTaxa = 5;
+  private final int nTaxa = 10;
   private Model modelSpec;
   
   public class Model
@@ -35,7 +35,7 @@ public class TestTreeInference implements Processor
     private final Potential<Integer> potential = new SimpleBirthDeathPotential();
     
     @DefineFactor(onObservations = true)
-    public final TipsTreeLikelihood<Integer> approximateLikelihood = new TipsTreeLikelihood<Integer>(1, TopologyUtils.syntheticTaxaList(nTaxa))
+    public final TipsTreeLikelihood<Integer> approximateLikelihood = new TipsTreeLikelihood<Integer>(10, TopologyUtils.syntheticTaxaList(nTaxa))
       .withEvolutionaryProcess(process, potential);
     
     @DefineFactor
@@ -46,8 +46,12 @@ public class TestTreeInference implements Processor
     public final Gamma<ScaleShapeParameterization> processParameterPrior = Gamma.on(process.parameters.expectedLength).withScaleShape(0.5, 20);
   }
   
-  @Test
-  public void testCaching()
+  public static void main(String [] args)
+  {
+    Mains.instrumentedRun(args, new RunTreeInference());
+  }
+  
+  public void run()
   {
     modelSpec = new Model();
     
@@ -59,9 +63,9 @@ public class TestTreeInference implements Processor
     
     // set param to some wrong value
     System.out.println("True parameters: " + modelSpec.process.parameters);
-    modelSpec.process.parameters.expectedLength.setValue(1.0);
+//    modelSpec.process.parameters.expectedLength.setValue(1.0);
     
-    modelSpec.approximateLikelihood.enableTestMode();
+//    modelSpec.approximateLikelihood.enableTestMode();
     modelSpec.approximateLikelihood.setNParticles(100);
     MCMCFactory mcmcFactory = new MCMCFactory();
     mcmcFactory.mcmcOptions.thinningPeriod = 1;
@@ -69,17 +73,13 @@ public class TestTreeInference implements Processor
     mcmcFactory.mcmcOptions.nMCMCSweeps = 100;
     MCMCAlgorithm mcmc = mcmcFactory.build(modelSpec, false);
     System.out.println(mcmc.model);
-    try
-    {
-      System.out.println("FIXME: the line below crash on the build server (because of R missing)");
-      mcmc.run();
-    }
-    catch (Exception e) {}
+    mcmc.run();
   }
 
   @Override
   public void process(ProcessorContext context)
   {
-    System.out.println(modelSpec.process);
+    // TODO Auto-generated method stub
+    
   }
 }
