@@ -232,11 +232,21 @@ public class TipsTreeLikelihood<S> implements GenerativeFactor
     
     double result = 0.0;
     
-    for (int site = 0; site < observations.nSites(); site++)
+    try
     {
-      TreeNodeSample<S> rootPopulation = divideAndConquer(site, topologicalCentroidRooting);
-      result += rootPopulation.logNormalization;
+      for (int site = 0; site < observations.nSites(); site++)
+      {
+        TreeNodeSample<S> rootPopulation = divideAndConquer(site, topologicalCentroidRooting);
+        result += rootPopulation.logNormalization;
+      }
     }
+    catch (Exception e)
+    {
+      System.err.println(e.getMessage());
+      return Double.NEGATIVE_INFINITY;
+    }
+    if (Double.isNaN(result))
+      return Double.NEGATIVE_INFINITY;
     
     return result;
   }

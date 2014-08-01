@@ -4,8 +4,6 @@ package tips.dc;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.google.common.collect.Sets;
-
 import briefj.collections.Counter;
 
 import conifer.TreeNode;

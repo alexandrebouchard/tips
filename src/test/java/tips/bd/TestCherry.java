@@ -1,6 +1,5 @@
 package tips.bd;
 
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -205,6 +205,7 @@ public class ReversibleBDProcess<P extends ReversibleBDProcess.Parameterization>
       return false;
     if (getClass() != obj.getClass())
       return false;
+    @SuppressWarnings("rawtypes")
     ReversibleBDProcess other = (ReversibleBDProcess) obj;
     if (Double.doubleToLongBits(lambda()) != Double
         .doubleToLongBits(other.lambda()))

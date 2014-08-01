@@ -17,7 +17,6 @@ import blang.ProbabilityModel;
 import blang.annotations.DefineFactor;
 import blang.processing.Processor;
 import blang.processing.ProcessorContext;
-import briefj.run.Mains;
 import conifer.TopologyUtils;
 import conifer.factors.NonClockTreePrior;
 

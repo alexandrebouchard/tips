@@ -3,7 +3,6 @@ package tips.finite;
 import java.util.Random;
 
 import briefj.collections.Counter;
-import tips.Process;
 import tips.StationaryProcess;
 
 
