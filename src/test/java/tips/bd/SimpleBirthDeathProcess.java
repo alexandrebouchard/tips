@@ -1,7 +1,10 @@
 package tips.bd;
 
+import java.util.Random;
+
 import briefj.collections.Counter;
 import tips.Process;
+import tips.StationaryProcess;
 import tutorialj.Tutorial;
 
 
@@ -11,7 +14,7 @@ import tutorialj.Tutorial;
  * @author Alexandre Bouchard (alexandre.bouchard@gmail.com)
  *
  */
-public class SimpleBirthDeathProcess implements Process<Integer>
+public class SimpleBirthDeathProcess implements StationaryProcess<Integer>
 {
   private double birthRate = 1.0;
   private double deathRate = 1.0;
@@ -33,5 +36,17 @@ public class SimpleBirthDeathProcess implements Process<Integer>
     if (point > 0)
       result.setCount(point - 1, deathRate * point);
     return result;
+  }
+
+  @Override
+  public double getStationaryProbability(Integer state)
+  {
+    return 0.5;
+  }
+
+  @Override
+  public Integer sampleFromStationary(Random rand)
+  {
+    return rand.nextBoolean() ? 0 : 1;
   }
 }
