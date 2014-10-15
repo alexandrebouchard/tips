@@ -89,9 +89,6 @@ public class TimeIntegratedPathSampler<S>
    * @param y
    * @param t1
    * @param t2
-   * @param divideByLeafStationary Whether the weight should be divided by the 
-   *   stationary of the two leaves, useful at non-pre-terminal nodes when building
-   *   a tree incrementally.
    * @return
    */
   public Counter<S> sampleTreeCherries(S x, S y, double t1, double t2)
