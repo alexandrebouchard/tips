@@ -34,11 +34,6 @@ import conifer.factors.UnrootedTreeLikelihood;
 
   
 /**
- * - TODO
- *  - finish inference code
- *  - implement finite CTMC-based code
- *  - implement generation code
- *  - 
  * 
  * @author Alexandre Bouchard (alexandre.bouchard@gmail.com)
  *
