@@ -97,8 +97,6 @@ public class ReversibleBDProcess<P extends ReversibleBDProcess.Parameterization>
 
   /**
    * 
-   * @param lambda Insertion rate.
-   * @param mu Deletion rate.
    */
   public ReversibleBDProcess(P parameters)
   {
